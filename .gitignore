@@ -1,0 +1,19 @@
+# ── Client / engagement data — NEVER commit (confidential + live credentials) ──
+engagements/
+brain/targets/
+brain/ruflo-export.jsonl
+.t3mp3st/
+**/.t3mp3st/
+
+# ── Credentials / tokens / secrets ──
+**/.token*
+**/*.pem
+**/*.key
+**/.env
+**/.env.*
+
+# ── OS / scratch ──
+.DS_Store
+*.bak
+.opt-hashes.tmp
+/tmp/

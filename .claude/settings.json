@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/we45/youtube/mad-Hacks_ai/scripts/brain.sh stats 2>/dev/null; echo 'mad-Hacks_ai active (keyless). Before recon: brain.sh recall <target> + mcp__ruflo__memory_search {namespace:\"mad-hacks\", smart:true}. SCOPE + VERIFY + REFUTE gates always on.'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/we45/youtube/mad-Hacks_ai/scripts/brain-sync-ruflo.sh >/dev/null 2>&1; bash /Users/we45/youtube/mad-Hacks_ai/scripts/optimize.sh >/dev/null 2>&1; echo 'mad-Hacks_ai: brain re-exported for ruflo + storage optimized.'"
+          }
+        ]
+      }
+    ]
+  }
+}

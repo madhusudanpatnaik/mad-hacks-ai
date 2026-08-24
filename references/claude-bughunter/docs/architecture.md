@@ -1,0 +1,1 @@
+../../../packs/claude-bughunter/architecture.md

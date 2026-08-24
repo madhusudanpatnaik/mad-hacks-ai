@@ -1,0 +1,1 @@
+../../../../../packs/claude-bughunter/osint-references/helpers-and-automation.md

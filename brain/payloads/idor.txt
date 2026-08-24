@@ -1,0 +1,45 @@
+"account_id": <victim>
+"organization_id": <victim>
+"owner_id": <victim>
+"user_id": <victim>
+/api/orders/12345
+/api/orders/<victim_id>
+/api/orders/<your_id + 1>
+/api/orders/<your_id - 1>
+/api/profile
+/api/tenants/123/billing
+/api/users/<victim_id>
+/api/users/me
+/exports/2024/report-<id>.csv
+/invoices/87432.pdf
+/invoices/download?file=invoice_12345.pdf
+/me
+/messages/9821
+/orgs/acme/users
+/users/9012
+/users/<id>
+/users/me
+?_method=DELETE
+DELETE
+HEAD
+Order.find(params[:id])
+PATCH
+POST
+POST /api/users/<victim>
+PUT
+T3JkZXI6MTIzNDU=
+_method=DELETE
+id=1234
+id=<your_id>&id=<victim_id>
+id[]=victim_id
+if record.user_id == current_user.id
+marker-<uuid>
+node(id: "<new>") { __typename ... on TypeName { sensitive_field } }
+order=5678
+owner_id: <victim>
+q1: user(id: 1) { email } q2: user(id: 2) { email } ...
+victim-<uuid>
+{"error": "not found"}
+{"id": ["your_id", "victim_id"]}
+{"items": []}
+{}

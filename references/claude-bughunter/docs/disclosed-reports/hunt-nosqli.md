@@ -1,0 +1,1 @@
+../../../../packs/claude-bughunter/disclosed-reports/hunt-nosqli.md

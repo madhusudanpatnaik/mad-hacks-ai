@@ -1,0 +1,23 @@
+/authorize
+/oauth/token
+Location: <user-supplied>
+alg=none
+code=
+code_challenge_method=plain
+code_verifier=
+https://app.target.com.attacker.com/cb
+https://app.target.com/cb
+https://app.target.com/cb#@attacker.com/
+https://app.target.com/cb/../@attacker.com/
+https://app.target.com/redirect?to=https://attacker.com/
+https://app.target.com@attacker.com/cb
+https://attacker.app.target.com/cb
+redirect_uri=https://app.target.com/cb#@attacker.com/
+redirect_uri=https://app.target.com/redirect?to=https://attacker.com/
+response_type=code
+response_type=code id_token
+response_type=id_token
+response_type=token
+scope=openid
+scope=read
+state=abc123

@@ -1,0 +1,1 @@
+../../../../packs/claude-bughunter/verification/juice-shop-2026-05-15.md

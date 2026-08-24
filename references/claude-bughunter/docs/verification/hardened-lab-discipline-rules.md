@@ -1,0 +1,1 @@
+../../../../packs/claude-bughunter/verification/hardened-lab-discipline-rules.md

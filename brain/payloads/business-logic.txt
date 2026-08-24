@@ -1,0 +1,14 @@
+$0.00
+$0.004
+$4.00
+0.1 + 0.2 === 0.30000000000000004
+Content-Type: application/json
+POST /api/cart/coupons HTTP/1.1
+POST /api/cart/items HTTP/1.1
+POST /api/orders/123/fulfill
+s3:Get*
+success=true
+{"amount": 100, "currency": "VND"}
+{"codes": ["SUMMER20","FIRSTORDER","LOYAL10","NEWCUSTOMER","FREESHIP"]}
+{"product_id": 42, "quantity": -3}
+{"product_id": 42, "quantity": 1, "price_override": -100}

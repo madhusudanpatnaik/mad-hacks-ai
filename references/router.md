@@ -55,18 +55,20 @@ Payload = `brain/payloads/<file>.txt`. Agent = dispatch target. CS = CyberStrike
 | CORS | `cors` | cors-hunter | CS · CBH |
 | CSRF | `csrf` | csrf-hunter | Strix · CBH |
 | JWT / OAuth / SAML | `oauth` + `saml` | oauth-hunter | CS(attack-jwt) · Strix · CBH(oauth,saml) · `ctf-techniques.md` |
-| Auth bypass / MFA / session | `brute-force` + `mfa-bypass` + `session` | auth-tester | Strix(weak_password_detection, authentication_jwt) · CBH · brute-force→CS(attack-rate-limit-bypass) |
+| Auth bypass / MFA / session | `brute-force` + `mfa-bypass` + `session` | auth-tester | Strix(weak_password_detection, authentication_jwt) · CBH · brute-force→CS(attack-rate-limit-bypass) · **`references/hunt-session.md` (14-check ladder)** |
+| **Registration / signup abuse** | (checklist-driven) + `mass-assignment-json.md` | (manual → mass-assign to `business-logic` / `privilege-escalation`) | **`references/hunt-registration.md` (22-check taxonomy)** |
+| **Cache deception** | `cache-deception` | (manual, curl-driven) | **`references/hunt-cache-deception.md`** — distinct from cache-poison (which is upstream/downstream server poisoning) |
 | GraphQL | `graphql` | graphql-audit | CS · CBH |
 | Race condition | `business-logic` | race-condition | CS · Strix |
 | Req smuggling | `http-smuggling` | (manual) | CS · Strix · CBH · `ctf-techniques.md` |
-| Cache poison | `cache-poison` | (manual) | CS · CBH |
+| Cache poison | `cache-poison` | (manual) | CS · CBH · (adjacent: `references/hunt-cache-deception.md`) |
 | Host header | `host-header` | (manual) | CS · CBH · `writeups-index.md` |
 | Prototype pollution | (manual) | (manual) | CS · Strix |
 | File upload | `file-upload` | file-upload | Strix · CBH |
 | Deserialization | `deserialization` | (rce-hunter) | Strix · CBH |
 | NoSQLi / LDAPi | `nosqli` / `ldapi` / `ldap` | (sqli-hunter) | Strix · CBH · `vuln-playbooks.md` |
 | Subdomain takeover | (recon) | subdomain-takeover | CS · Strix |
-| Mass assignment | (manual) | (business-logic) | Strix |
+| Mass assignment | `mass-assignment-json.md` (16 payload buckets) | business-logic | Strix · **`references/hunt-registration.md` §21** — huge SaaS-tier / role-escalation vector |
 | Info disclosure | `sensitive-files` | info-disclosure | Strix — feeder, must chain |
 
 Hidden-param discovery (feeds IDOR/SSRF/LFI): `params` payload + arjun/x8. 403 walls: `vuln-playbooks.md#403-bypass`.
@@ -77,6 +79,23 @@ Hidden-param discovery (feeds IDOR/SSRF/LFI): `params` payload + arjun/x8. 403 w
 
 | Need | Load |
 |------|------|
+| One-liner recon arsenal (subs→urls→params→per-class filters) | `references/recon-oneliners.md` (CoffinXP master checklist) |
+| Target runs WordPress | `references/wordpress-recon.md` (wpscan + admin-ajax + oEmbed SSRF + plugin CVE catalog) |
+| Coverage checklist against a 22-phase methodology + independent-verifier patterns | `references/xalgorix-methodology.md` (adopted from Apache-2.0 xalgorix repo — clone at `packs/xalgorix/`) |
+| Novel-vulnerability research on a codebase / system (not bounty enumeration — chain-until-impact with adversarial validation) | `references/cdc-harness.md` via `/cdc-research <target>` |
+| XSS lane scanner — dalfox v3 (Rust, MIT). Native `--blind-oob` (interactsh) + MCP stdio 6-tool server + SARIF/JSONL output. **Prefer over hand-rolled curl loops for XSS scan/mining/blind.** Local install may be v2 (Go); v3 upgrade recipe + full CLI/MCP contract in the guide. | `references/dalfox-guide.md` (clone at `packs/dalfox/`) |
+| **Peer methodology library** — Rifteo Skills (MIT, 38 skills). Inventory + gap analysis + when-to-use-which for every skill vs our native coverage. Points to `packs/rifteo-skills/<skill>/SKILL.md` for on-demand loading. | `references/rifteo-skills-catalog.md` |
+| **Verified / Inferred / Assumed labeling** — doctrine extension for the VERIFY/REFUTE gate. Load before shipping any finding, chain, or severity call. | `references/deadangle.md` |
+| **Session-state save/restore** — write HANDOFF.md at end-of-session so the next agent continues without asking questions. | `references/engagement-handoff.md` |
+| **Active Directory attack lane** (Kerberoasting, ACL abuse, DCSync, AD CS ESC1-ESC8, NTLM relay, BloodHound) | `packs/rifteo-skills/ad-breach/SKILL.md` (on-demand) |
+| **Android APK static analysis** (apktool + jadx + OWASP MASVS mapping) — extends `scripts/mobile-audit.sh` | `packs/rifteo-skills/droid-recon/SKILL.md` (on-demand) |
+| **Clickjacking / UI redressing** (frame protection detection, JS frame-busting bypass, drag-and-drop, OAuth consent variants) | `packs/rifteo-skills/clickjacking-hunter/SKILL.md` (on-demand) |
+| **HTTP Parameter Pollution (HPP)** (server/client-side HPP, WAF bypass via param splitting, OAuth/payment/access-control abuse) | `packs/rifteo-skills/hpp-hunter/SKILL.md` (on-demand) |
+| **JWT attacks (dedicated cracker)** (alg:none, RS256→HS256 confusion, weak-secret brute, kid/jku/jwk injection, claim tampering) | `packs/rifteo-skills/jwt-cracker/SKILL.md` (on-demand) |
+| **Nuclei template generation** from a finding or HTTP request/response pair | `packs/rifteo-skills/nuclei-template-writer/SKILL.md` (on-demand) |
+| **CVE exploitability lookup** (searchsploit / Vulners / MSF / weaponized exploit refs) | `packs/rifteo-skills/check-exploit/SKILL.md` (on-demand) |
+| **CVSS v3.1 scoring** (metric inference from context, one sharp Q if ambiguity would change severity) | `packs/rifteo-skills/cvss-scorer/SKILL.md` (on-demand) |
+| **Governance / audit layer** (compliance-gap-analyzer, control-lookup, risk-assessor, remediation-planner) — for pentest / audit / red-team engagements, NOT bug-bounty | see `references/rifteo-skills-catalog.md` §4 |
 | Tool has an execution mode I must check | `references/arsenal.md` |
 | Prod / bug-bounty rules of engagement | `references/production-safety.md` |
 | Detected a specific stack (Firebase/Django/K8s/…) | `references/tech-stack-playbooks.md` |

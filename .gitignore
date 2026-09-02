@@ -17,3 +17,12 @@ brain/ruflo-export.jsonl
 *.bak
 .opt-hashes.tmp
 /tmp/
+
+# CDC harness per-target working state
+.cdc/
+
+# Externally-cloned packs (provenance + re-hydrate recipe in packs/UPSTREAM.md,
+# scripts/reinstall-packs.sh). Nested .git dirs — never commit into this repo.
+packs/xalgorix/
+packs/dalfox/
+packs/rifteo-skills/

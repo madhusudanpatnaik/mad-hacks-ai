@@ -62,6 +62,11 @@ Every return MUST end with this exact markdown block so the CONFIRMED/REFUTED de
 
    Bottom line: <one honest sentence — is this real, at this severity, or not>
 
+   Label breakdown (deadangle discipline — see references/deadangle.md):
+     • <claim 1>  → Verified   (artifact: evidence/EV-N.txt line M)
+     • <claim 2>  → Inferred   (signal present; end-to-end not triggered)
+     • <claim 3>  → Assumed    (default framework behavior; not tested here)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -70,5 +75,6 @@ Every return MUST end with this exact markdown block so the CONFIRMED/REFUTED de
 - Fill EVERY field. Empty fields mean the check wasn't done — that's a REFUTED, not a CONFIRMED.
 - If you REFUTE, list at least one concrete refutation reason that stood up. "Insufficient evidence" is a valid, honest reason.
 - If you CONFIRM, at least one refutation attempt MUST have been tried and failed — the card proves you tried to kill it. A CONFIRMED with an empty refutation list = re-dispatch.
+- **Label breakdown is mandatory** — apply the deadangle discipline (Verified / Inferred / Assumed) to each load-bearing claim in the finding. A CONFIRMED verdict whose claims are majority-Inferred/Assumed is grounds for DOWNGRADED-to-NEEDS-MORE-EVIDENCE. Master question: *"What would destroy this conclusion if I was wrong?"* Full doctrine: `~/.claude/skills/mad-hacks/references/deadangle.md`.
 
 Persist the same verdict to disk for chain-of-custody: append the JSON envelope to `./.t3mp3st/<target>/verdicts.jsonl` and cross-reference the finding id in the report's evidence index.

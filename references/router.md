@@ -113,3 +113,17 @@ Hidden-param discovery (feeds IDOR/SSRF/LFI): `params` payload + arjun/x8. 403 w
 | Fuzz/property/mutation methodology | `references/edge-case-hunting.md` |
 | Assembling the final report | `references/report-template.md` |
 | Verbatim operator recipe | `references/prompts/op-<operator>.md` |
+
+
+## Secrets scanning
+
+- **packs/secrets-patterns-db/** — 1610 curated regex patterns for API-key / token / credential leaks (mazen160). Use as the pattern DB for trufflehog / gitleaks. High-confidence patterns are the spot-check first pass; low-confidence needs manual triage. See brain/lessons.md '2026-11 SECRETS SCANNING' entry for the ladder.
+
+## Cloudflare / origin discovery
+
+- **packs/CloudRip/** — moscovium-mc/CloudRip. Python subdomain-based CF origin-IP finder. See brain/lessons.md '2026-11 CLOUDFLARE-ORIGIN LADDER' for the 4-method combo.
+
+## Vendor CVE POCs
+
+- **packs/Poc/** — shadowsock5/Poc. 72 vendor-organized CVE POC directories: Confluence, Jira, Bitbucket, Jenkins, GitLab, Grafana, Nexus, Exchange, ActiveMQ, Weblogic, Log4j, Fastjson, more. Use for stack-matched POCs. See brain/lessons.md '2026-11 SHADOWSOCK5/POC MAP'.
+- **packs/exploitarium/** — bikini/exploitarium. 39 self-contained POCs for browser RCEs, container escapes, server-app RCEs (Discourse/MyBB/NodeBB/Nextcloud/Flowise), library bugs. 12 CVEs assigned (CVE-2026-58049..58058, 58592, 58593).

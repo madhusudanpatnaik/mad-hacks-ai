@@ -26,6 +26,10 @@ brain/ruflo-export.jsonl
 packs/xalgorix/
 packs/dalfox/
 packs/rifteo-skills/
+packs/secrets-patterns-db/
+packs/exploitarium/
+packs/CloudRip/
+packs/Poc/
 
 # Asset registry — regenerable from source via scripts/build-registry.py.
 # Canonical remains the file tree; this is the machine-readable index.

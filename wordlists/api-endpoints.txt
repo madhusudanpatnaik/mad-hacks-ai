@@ -296,3 +296,55 @@ api/files
 api/files/upload
 api/admin/users
 api/.env
+# ─── generic /api info-leak surface (arkShadow wordlist, 2026-11) ───
+/api/v1/export/data
+/api/v1/config
+/api/debug/env
+/api/v2/auth/sessions
+/api/v1/admin/users
+/api/v1/billing/details
+/api/v1/db/stats
+/api/v1/logs
+/api/v1/health
+/api/v1/status
+/api/v1/internal/settings
+/api/v1/cloud/credentials
+/api/v1/user/profile
+/api/v1/system/info
+/api/v1/backup/list
+# ─── /api/v2 permutations (rotate v1→v2) ───
+/api/v2/export/data
+/api/v2/config
+/api/v2/admin/users
+/api/v2/db/stats
+/api/v2/internal/settings
+/api/v2/cloud/credentials
+/api/v2/system/info
+/api/v2/backup/list
+# ─── WordPress info-leak (wp-json REST + plugin surfaces) ───
+/wp-json/wordfence/v1/config
+/wp-json/wp/v2/users
+/wp-json/wp/v2/users?context=edit
+/wp-json/wp/v2/settings
+/wp-json/wp/v2/media
+/wp-json/wp/v2/posts?status=any
+/wp-json/wp/v2/pages?status=private
+/wp-json/wp/v2/comments?status=all
+/wp-json/elementor/v1/system-info
+/wp-json/wp/v2/plugins
+/wp-json/wp/v2/themes
+/wp-json/oembed/1.0/embed
+/wp-json/wp/v2/search
+# ─── common plugin REST surfaces (all leak-prone) ───
+/wp-json/wc/v3/orders
+/wp-json/wc/v3/customers
+/wp-json/wc/v3/reports
+/wp-json/contact-form-7/v1/contact-forms
+/wp-json/jetpack/v4/site
+/wp-json/wpforms/v1/forms
+/wp-json/gravityforms/v2/forms
+/wp-json/formidable/v2/forms
+/wp-json/yoast/v1/statistics
+/wp-json/redirection/v1/log
+/wp-json/wp-security/v1/get-logs
+/wp-json/wp-security/v1/get-firewall-logs

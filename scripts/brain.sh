@@ -18,7 +18,14 @@
 #   brain.sh tool "<name> — <use>"        → record a new tool/adapter learned from a repo
 #   brain.sh stats                        → what the brain currently holds
 set -uo pipefail
-BRAIN="$HOME/.claude/skills/mad-hacks/brain"
+# Derive REPO_ROOT from THIS script's location — works regardless of where the
+# repo is checked out (~/dev/mad-hacks, /opt/mad-hacks, symlinked into
+# ~/.claude/skills/mad-hacks, etc.). The earlier hardcoded
+# $HOME/.claude/skills/mad-hacks/brain silently pointed at nothing when the
+# repo lived elsewhere, causing recall/learn/payload to write to a phantom
+# path. MADHACKS_BRAIN env overrides for the rare relocation use case.
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BRAIN="${MADHACKS_BRAIN:-$REPO_ROOT/brain}"
 mkdir -p "$BRAIN/targets" "$BRAIN/payloads"
 TS(){ date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 slug(){ printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed 's#[^a-z0-9._-]#_#g'; }

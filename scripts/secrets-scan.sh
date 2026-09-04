@@ -53,12 +53,46 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# ─── portable python3-with-yaml probe ─────────────────────
+# CORRECTION (2026-09): the earlier comment claimed "yaml stdlib on macOS".
+# That was wrong — PyYAML is bundled with Apple's /usr/bin/python3 via the
+# Xcode CLT, but it is NOT part of the Python stdlib. On stock Linux, Alpine
+# containers, and bare Docker images, /usr/bin/python3 has no yaml.
+# Probe candidates in preference order and pick the first one whose python
+# can actually `import yaml`. Fail loudly with an actionable message.
+_pick_python_with_yaml() {
+  local candidates="python3 /usr/bin/python3 /opt/homebrew/bin/python3 /usr/local/bin/python3 python"
+  for py in $candidates; do
+    if command -v "$py" >/dev/null 2>&1; then
+      if "$py" -c "import yaml" >/dev/null 2>&1; then
+        printf '%s' "$py"; return 0
+      fi
+    fi
+  done
+  return 1
+}
+
 # ─── --rebuild-rules ────────────────────────────────────────
 if [ "$REBUILD" = "1" ]; then
   [ -f "$PATTERN_DB" ] || { echo "✗ pattern DB missing: $PATTERN_DB — run scripts/reinstall-packs.sh"; exit 3; }
   mkdir -p "$RULES_DIR"
-  # Use system python3 (has yaml stdlib on macOS) — falls back to /opt/homebrew if needed
-  PY="/usr/bin/python3"; command -v "$PY" >/dev/null || PY="python3"
+  PY="$(_pick_python_with_yaml || true)"
+  if [ -z "$PY" ]; then
+    echo "✗ no python3 with PyYAML found. tried: python3 /usr/bin/python3 /opt/homebrew/bin/python3 /usr/local/bin/python3 python" >&2
+    echo "  install PyYAML in ONE of them, e.g.:" >&2
+    echo "    pip3 install --user pyyaml                 # user-space" >&2
+    echo "    python3 -m venv .venv && .venv/bin/pip install pyyaml   # per-project venv" >&2
+    echo "    apk add py3-yaml                            # Alpine" >&2
+    echo "    apt install python3-yaml                    # Debian/Ubuntu" >&2
+    exit 3
+  fi
+  # Use a heredoc for the version probe so bash doesn't need to escape the quotes
+  PY_INFO=$("$PY" - <<'PYEOF'
+import sys, yaml
+print(f"python {sys.version.split()[0]}, PyYAML {yaml.__version__}")
+PYEOF
+)
+  echo "  using python: $PY  ($PY_INFO)"
   "$PY" "$REPO/packs/secrets-patterns-db/scripts/convert-rules.py" \
     --db "$PATTERN_DB" --type trufflehogv3 --export "$RULES_DIR/trufflehog-v3" || exit 3
   "$PY" "$REPO/packs/secrets-patterns-db/scripts/convert-rules.py" \
@@ -101,7 +135,9 @@ if [ "$SCANNER" = "gitleaks" ] || [ "$SCANNER" = "both" ]; then
   gl_args=(detect --source "$TARGET" --config "$GL_RULES" --no-git --report-format json --report-path "$OUT/gitleaks.json")
   gitleaks "${gl_args[@]}" 2>&1 | tail -3
   if [ -s "$OUT/gitleaks.json" ]; then
-    gl_count=$(/usr/bin/python3 -c "import json; print(len(json.load(open('$OUT/gitleaks.json'))))" 2>/dev/null || echo 0)
+    # json parsing needs stdlib json only — any python3 works here (no yaml needed)
+    PY_ANY="$(command -v python3 || command -v /usr/bin/python3)"
+    gl_count=$("$PY_ANY" -c "import json; print(len(json.load(open('$OUT/gitleaks.json'))))" 2>/dev/null || echo 0)
     echo "  → $gl_count secret(s) in $OUT/gitleaks.json"
     [ "$gl_count" -gt 0 ] 2>/dev/null && FOUND=1
   fi
@@ -111,7 +147,12 @@ fi
 if [ "$HIGH_ONLY" = "1" ] && [ -s "$OUT/trufflehog.jsonl" ]; then
   # Read the raw pattern DB and build a whitelist of high-confidence rule names,
   # then filter trufflehog.jsonl's ExtraData.name field. Keeps output triage-friendly.
-  /usr/bin/python3 <<PY
+  # NEEDS yaml — reuse the same portable probe.
+  PY_YAML="$(_pick_python_with_yaml || true)"
+  if [ -z "$PY_YAML" ]; then
+    echo "  ! --high-only requires PyYAML; skipping filter (see --rebuild-rules for install hints)" >&2
+  else
+  "$PY_YAML" <<PY
 import json, yaml, sys
 db = yaml.safe_load(open("$PATTERN_DB"))
 high = {p["pattern"]["name"] for p in db["patterns"] if p["pattern"].get("confidence")=="high"}
@@ -126,6 +167,7 @@ with open("$OUT/trufflehog-high.jsonl","w") as f:
     for r in out: f.write(json.dumps(r) + "\n")
 print(f"  → high-confidence: {len(out)} in $OUT/trufflehog-high.jsonl")
 PY
+  fi   # end of PY_YAML availability branch
 fi
 
 # ─── summary ────────────────────────────────────────────────

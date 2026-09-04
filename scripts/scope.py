@@ -11,7 +11,8 @@ Pattern forms (matched against the URL's host):
   example.com        -> the apex AND any subdomain (example.com, api.example.com)
   *.example.com      -> any subdomain (NOT the bare apex)
   api.example.com    -> that exact host
-  10.0.0.0/8         -> any IP in the CIDR (IPv4)
+  10.0.0.0/8         -> any IPv4 in the CIDR
+  2001:db8::/32      -> any IPv6 in the CIDR
   re:^staging[0-9]+\\.example\\.com$   -> explicit regex (prefix re:)
 """
 import ipaddress
@@ -24,7 +25,32 @@ def _host_of(target):
     if "://" not in t:
         t = "//" + t
     host = (urlparse(t).hostname or "").lower().rstrip(".")
+    # Bracketed IPv6 literals arrive from urlparse without brackets; ip_address
+    # accepts them directly. Normalize any IPv6-mapped IPv4 to its canonical form.
     return host
+
+
+def _looks_like_cidr(p):
+    """A pattern is a CIDR iff ipaddress.ip_network() accepts it. Handles both
+    IPv4 (10.0.0.0/8) and IPv6 (2001:db8::/32). Replaces the older heuristic
+    that stripped '.' and '/' and required all-digits — that heuristic silently
+    rejected every IPv6 CIDR because ':' remained after the strip."""
+    if "/" not in p:
+        return False
+    try:
+        ipaddress.ip_network(p, strict=False)
+        return True
+    except ValueError:
+        return False
+
+
+def _host_as_ip(host):
+    """Try to interpret host as an IPv4 or IPv6 address. Returns the
+    ipaddress.IPv{4,6}Address object or None."""
+    try:
+        return ipaddress.ip_address(host)
+    except ValueError:
+        return None
 
 
 def _match(pattern, host):
@@ -36,11 +62,22 @@ def _match(pattern, host):
             return re.search(p[3:], host) is not None
         except re.error:
             return False
-    if "/" in p and p.replace(".", "").replace("/", "").isdigit():  # CIDR
+    if _looks_like_cidr(p):
+        # Support IPv4 CIDR ↔ IPv4 host and IPv6 CIDR ↔ IPv6 host. Cross-family
+        # (IPv4 host against IPv6 CIDR or vice versa) is a mismatch, not an
+        # error — return False. IPv6-mapped IPv4 like ::ffff:10.0.0.1 is
+        # deliberately NOT auto-converted; the IPv4 CIDR 10.0.0.0/8 should
+        # NOT accept ::ffff:10.0.0.1 (that would be a scope-bypass).
+        ip = _host_as_ip(host)
+        if ip is None:
+            return False
         try:
-            return ipaddress.ip_address(host) in ipaddress.ip_network(p, strict=False)
+            net = ipaddress.ip_network(p, strict=False)
         except ValueError:
             return False
+        if ip.version != net.version:
+            return False
+        return ip in net
     if p.startswith("*."):
         base = p[2:]
         return host.endswith("." + base)
@@ -105,6 +142,20 @@ def _selftest():
     s2 = Scope(in_scope=["*.test.example.com"])
     assert s2.in_scope_host("a.test.example.com")
     assert not s2.in_scope_host("test.example.com")
+
+    # ─── IPv6 CIDR coverage (2026-09 fix — earlier heuristic rejected all v6 CIDRs) ─
+    s3 = Scope(in_scope=["2001:db8::/32", "fd00::/8"], out_of_scope=[])
+    assert s3.in_scope_host("https://[2001:db8:1234::1]/")      # in scope
+    assert s3.in_scope_host("https://[fd00:cafe::42]/")         # ULA in scope
+    assert not s3.in_scope_host("https://[2002::1]/")           # different v6 block
+    assert not s3.in_scope_host("https://[::1]/")               # loopback not in either
+    # Cross-family: IPv4 host against IPv6-only scope must NOT match
+    assert not s3.in_scope_host("https://10.0.0.1/")
+    # Cross-family: IPv6 host against IPv4-only scope must NOT match
+    s4 = Scope(in_scope=["10.0.0.0/8"], out_of_scope=[])
+    assert not s4.in_scope_host("https://[::ffff:10.0.0.1]/")   # scope-bypass guard
+    assert not s4.in_scope_host("https://[2001:db8::1]/")
+    assert s4.in_scope_host("https://10.5.6.7/")                # v4 still works
     print("scope.py self-test: PASS")
 
 

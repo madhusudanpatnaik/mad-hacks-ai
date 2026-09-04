@@ -399,17 +399,30 @@ def collect_all():
                 if row: rows.append(row)
     counts["lesson"] = sum(1 for r in rows if r["type"] == "lesson")
 
-    # agents/  (mad-hacks-native t3-* only; symlinked specialist hunters live at ~/.claude/agents/)
-    for f in sorted((REPO / "agents").glob("*.md")):
-        rows.append(extract_agent(f))
-    # also index specialist hunters at ~/.claude/agents/ (they're the swarm)
+    # agents/  — REPO-CANONICAL layout is agents/{hunters,operators}/*.md (per
+    # 2026-09 portability refactor). Use rglob so we pick up both subdirs.
+    # Previously this was a non-recursive .glob("*.md") that matched 0 files
+    # after the repo layout change — a fresh clone with no ~/.claude/agents/
+    # produced 0 indexed agents, silently.
+    seen_agent_ids = set()
+    for f in sorted((REPO / "agents").rglob("*.md")):
+        row = extract_agent(f)
+        if row:
+            rows.append(row)
+            seen_agent_ids.add(row["id"])
+    # Also index any additional agents present at ~/.claude/agents/ that AREN'T
+    # covered by the repo canonical tree (user-personal, claude-code builtins,
+    # third-party SDK helpers). Deduplicate by agent id, NOT by symlink target —
+    # a symlink from ~/.claude/agents/foo.md back to REPO/agents/hunters/foo.md
+    # SHOULD be skipped because its id already came in from the rglob above.
     home_agents = Path.home() / ".claude" / "agents"
     if home_agents.exists():
         for f in sorted(home_agents.glob("*.md")):
-            # skip already-indexed t3-* files (symlinked from repo)
-            if f.is_symlink() and str(f.resolve()).startswith(str(REPO)):
-                continue
-            rows.append(extract_agent(f))
+            row = extract_agent(f)
+            if not row: continue
+            if row["id"] in seen_agent_ids: continue
+            rows.append(row)
+            seen_agent_ids.add(row["id"])
     counts["agent"] = sum(1 for r in rows if r["type"] == "agent")
 
     return rows, counts

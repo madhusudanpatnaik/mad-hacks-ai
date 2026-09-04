@@ -25,6 +25,8 @@ PACKS=(
   "CloudRip|https://github.com/moscovium-mc/CloudRip|5bd7d54a6976e86bcb5a816886b2b8432a81967c"
   "Poc|https://github.com/shadowsock5/Poc|b6e7ec272fa6f4bc93918b4d7ba7d83ce8940eaa"
   "Awesome-Bugbounty-Writeups|https://github.com/devanshbatham/Awesome-Bugbounty-Writeups|72010067cd49196f8f45b9137d1c0d06ad5ba915"
+  "vulnerability-research|https://github.com/skraft9/vulnerability-research|e5a0a9ea4be91f765b10027ad4b690ce9c063d89"
+  "AILA|https://github.com/project-lambda-zero/AILA|ae50589ff301b23ab501594737d47cf775ca694a"
 )
 
 command -v git >/dev/null || { echo "reinstall-packs: git required"; exit 3; }

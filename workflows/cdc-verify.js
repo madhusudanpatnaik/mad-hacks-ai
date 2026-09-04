@@ -1,5 +1,20 @@
 // CDC Adversarial Verify — parallel DISPROVE pass over N primitives / chain-nodes.
 //
+// ┌─ RUNTIME ──────────────────────────────────────────────────────────────┐
+// │  This file is a Claude Code Workflow-tool script — NOT standalone Node │
+// │  Depends on the Workflow runtime globals: agent(), parallel(), phase(),│
+// │  log(), args, budget. `node workflows/cdc-verify.js` will throw        │
+// │  ReferenceError: args is not defined — that is expected.               │
+// │                                                                        │
+// │  Invoke via the Claude Code Workflow tool:                             │
+// │      Workflow({ scriptPath: 'workflows/cdc-verify.js',                 │
+// │                 args: { target, mode, visibility, goal, ... } })       │
+// │  Or from within another script:  workflow('cdc-verify', {args})        │
+// │                                                                        │
+// │  From the CDC root harness this is called every tick when there is    │
+// │  ≥1 primitive to validate. See references/cdc-harness.md § verify.    │
+// └────────────────────────────────────────────────────────────────────────┘
+//
 // Called by the CDC root when the tick loop has ≥1 primitive to validate.
 // Every verifier spawns independently, receives the DISPROVE contract, and returns
 // a structured verdict. Root then writes verdicts via `cdc-state.sh verdict add`.

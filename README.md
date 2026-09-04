@@ -179,8 +179,9 @@ Per-category MRR (RRF, 2026-09-04 v2): direct **0.676** · synonym **0.578** · 
 
 **Operator-integration surface** — `tests/e2e/` covers what the retrieval suite doesn't:
 - **Scope gate as security boundary** (`test_scope_boundary.py`, 45 assertions) — 14 adversarial variants (suffix-confusion, IPv6-mapped IPv4, credentials-injection, IDN/punycode, wildcard depth, trailing-dot, mixed-case, deny-wins) + fail-closed invariant (`engagement-state.sh init` refuses OUT-OF-SCOPE targets when `--scope-check <SCOPE.md>` is passed or `.t3mp3st/SCOPE.md` is discoverable; exit code 4).
+- **Agent portability + provenance** (`test_agent_portability.py`, 255 assertions) — fresh sync / corrupt / delete / manifest self-consistency. Every hunter's declared `requires_scripts` + `requires_references` verified against the repo — dead links caught before hunter dispatch.
 - **Full `/mad-hunt` pipeline walk** (`test_engagement_e2e.py`, 65 assertions) — deterministic synthetic chain: scope → state → recon → classifier → intelligence recall → exhausted-not-prioritized → hypothesis-surfaced → evidence-captured → verifier-input → report-input → brain-learns. Every hop asserts its contract.
-- Combined: **159 assertions** across retrieval + state + operator. Runs in ~60 s. `bash tests/run-all.sh`.
+- Combined: **414+ assertions** across retrieval + state + operator + portability. Runs in ~90 s. `bash tests/run-all.sh`.
 
 ## MCP integration (auto-detected)
 
@@ -191,6 +192,18 @@ Per-category MRR (RRF, 2026-09-04 v2): direct **0.676** · synonym **0.578** · 
 - **ruflo MCP (optional cache)** — after `bash scripts/brain-sync-ruflo.sh --from-registry`, use `mcp__ruflo__memory_import_claude` to populate a semantic cache namespaced `"mad-hacks"`. Provenance timestamps make staleness detectable. **Never a source of truth**; the file-brain is.
 
 ---
+
+## Bootstrap (reproducibility)
+
+The 55 hunter+operator agents live at `agents/{hunters,operators}/` (repo-canonical) with sha256 anchors in `agents/manifest.json`. Fresh clone → live runtime in two commands:
+
+```bash
+python3 scripts/agents-manifest.py    # regenerate manifest if any agent edited
+bash scripts/agents-sync.sh           # sync repo agents into ~/.claude/agents/
+bash scripts/agents-verify.sh         # confirm installed sha256s match manifest (read-only)
+```
+
+The verify contract: `git checkout + agents-sync → same mad-Hacks behavior on any machine`. `agents-verify.sh --strict` fails on any drift (missing agent, sha256 mismatch, unsatisfied `requires_scripts`/`requires_references`). Suite `test_agent_portability.py` exercises fresh-sync / corrupt / delete / manifest self-consistency (255 assertions).
 
 ## An effective run (concrete)
 

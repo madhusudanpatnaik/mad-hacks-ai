@@ -151,6 +151,15 @@ case "$CMD" in
     [ -n "$CLS" ] && [ -n "$VEC" ] && [ -n "$VAR" ] && [ -n "$WHY" ] \
       || { echo "usage: exhausted <target> <class> <vector> <variant> \"<why>\" [evidence_path]"; exit 2; }
     EVIP="${5:-}"
+    # Canonicalize class/vector/variant tokens at WRITE time so the router's
+    # exhausted-class set-intersection cannot silently miss due to casing /
+    # underscore / space drift ('SSRF' vs 'ssrf', 'auth_session' vs 'auth-session').
+    # Reader-side normalization exists too (defense in depth), but writing canonical
+    # form keeps EXHAUSTED.md self-consistent when grepped by humans or other tools.
+    canonicalize(){ printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr '_ ' '--' | sed 's/-\{2,\}/-/g; s/^-//; s/-$//'; }
+    CLS=$(canonicalize "$CLS")
+    VEC=$(canonicalize "$VEC")
+    VAR=$(canonicalize "$VAR")
     printf -- '- [%s] [%s] [%s] [%s] — %s%s\n' "$(TS)" "$CLS" "$VEC" "$VAR" "$WHY" \
       "$([ -n "$EVIP" ] && printf ' — evidence: %s' "$EVIP")" >> "$EXH"
     log_append "exhausted: [$CLS/$VEC/$VAR] $WHY"

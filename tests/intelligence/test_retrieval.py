@@ -191,6 +191,108 @@ def main():
         print(json.dumps({"reports": reports, "queries_count": len(queries),
                          "faiss_available": faiss_available}, indent=2))
 
+    # ─── invariants (2026-09-04 refactor guardrails) ────────
+    # These run only over the full 64-query set (no --category filter) and only
+    # if the default configs are active. They fail hard on regression: silent
+    # numeric drift is what killed the last blind-expansion iteration, so the
+    # suite has to catch it.
+    if not args.category and not args.config:
+        run_invariants(queries, reports)
+
+
+# ── per-category floors (guards against aggregate-hides-collapse regression) ──
+# Baseline frozen at commit 846ef2a: direct=0.588 synonym=0.378 indirect=0.100
+# ambiguous=0.357 tech-cross=0.750. Floors are 5% below baseline — any drop
+# past this fails the test. Refactor-critique #6 explicitly asked for this.
+CATEGORY_FLOORS = {
+    "direct":     0.559,   # 0.588 * 0.95
+    "synonym":    0.359,   # 0.378 * 0.95
+    "indirect":   0.095,   # 0.100 * 0.95
+    "ambiguous":  0.339,   # 0.357 * 0.95
+    "tech-cross": 0.712,   # 0.750 * 0.95
+}
+
+
+def run_invariants(queries, reports):
+    """Post-refactor guardrails. Each returns (name, ok, detail).
+    Prints a summary line; exits non-zero if any invariant fails."""
+    print()
+    print("═══════════════════════════════════════════════════════════════════════")
+    print(" INVARIANTS — refactor guardrails")
+    print("═══════════════════════════════════════════════════════════════════════")
+    failures = []
+
+    # Pick the primary RRF report to measure per-category floors on
+    primary = next((r for r in reports if r["label"].startswith("RRF")), None)
+
+    # (1) per-category MRR floors on the RRF config
+    if primary:
+        cat_mrr = {}
+        for pq in primary["per_query"]:
+            c = pq.get("category", "")
+            cat_mrr.setdefault(c, []).append(pq["mrr"])
+        for cat, floor in CATEGORY_FLOORS.items():
+            values = cat_mrr.get(cat, [])
+            if not values:
+                continue
+            avg = sum(values) / len(values)
+            ok = avg >= floor
+            print(f"  [{ 'OK' if ok else 'FAIL' }] category={cat:<10s} MRR={avg:.3f} floor={floor:.3f}")
+            if not ok:
+                failures.append(f"per-category floor: {cat} MRR={avg:.3f} < {floor:.3f}")
+
+    # (2) state-absence invariant: without --target, every row has _state_adj={} and _final_score==_rrf_score
+    sample_query = queries[0]["query"] if queries else "test"
+    try:
+        out = subprocess.check_output(
+            ["bash", str(RECALL_SH), sample_query,
+             "--sources", "lex,writeups", "--limit", "10", "--json"],
+            stderr=subprocess.DEVNULL, timeout=45
+        ).decode("utf-8", errors="ignore")
+        data = json.loads(out)
+        rows = data.get("results", [])
+        all_empty_adj = all(r.get("_state_adj") == {} for r in rows)
+        scores_match  = all(
+            round(r.get("_final_score", -1), 9) == round(r.get("_rrf_score", -2), 9)
+            for r in rows
+        )
+        # Also: state.engaged should be False when no --target
+        state_off = data.get("state", {}).get("engaged") is False
+        ok = all_empty_adj and scores_match and state_off and len(rows) > 0
+        print(f"  [{ 'OK' if ok else 'FAIL' }] state-absence: _state_adj={{}} + _final_score=_rrf_score + state.engaged=false ({len(rows)} rows)")
+        if not ok:
+            failures.append(f"state-absence: adj_empty={all_empty_adj} scores_match={scores_match} state_off={state_off}")
+    except Exception as e:
+        failures.append(f"state-absence: exception {e}")
+
+    # (3) empty-classes-row invariant: a row with no classes and no inference match must NOT get demoted.
+    # Construct a synthetic assertion: query for something that returns rows lacking ssrf-class,
+    # then verify no row is demoted (no active target so no state).
+    try:
+        out = subprocess.check_output(
+            ["bash", str(RECALL_SH), "reference",  # generic query surfacing many kinds of rows
+             "--sources", "lex,writeups", "--limit", "10", "--json"],
+            stderr=subprocess.DEVNULL, timeout=45
+        ).decode("utf-8", errors="ignore")
+        data = json.loads(out)
+        rows = data.get("results", [])
+        no_penalty = all(not r.get("_state_adj", {}).get("exhausted_penalty") for r in rows)
+        ok = no_penalty and len(rows) > 0
+        print(f"  [{ 'OK' if ok else 'FAIL' }] empty-classes-row invariant: no rows carry exhausted_penalty without target ({len(rows)} rows)")
+        if not ok:
+            failures.append("empty-classes-row: penalty fired without target set")
+    except Exception as e:
+        failures.append(f"empty-classes-row: exception {e}")
+
+    print()
+    if failures:
+        print(f"  ✗ INVARIANT FAILURES ({len(failures)}):")
+        for f in failures:
+            print(f"    - {f}")
+        sys.exit(1)
+    else:
+        print("  ✓ all invariants pass")
+
 
 if __name__ == "__main__":
     main()

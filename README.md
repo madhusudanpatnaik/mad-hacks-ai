@@ -4,6 +4,8 @@ A **single-folder, keyless offensive-security toolkit for Claude Code.** This se
 
 Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded in: **xalgorix** (Apache-2.0 · autonomous-pentest methodology), **hahwul/dalfox** v3 (MIT · Rust XSS scanner with native OOB + MCP), **Rifteo/skills** (MIT · 38-skill peer library — 2 doctrine promotions, 10 on-demand attack lanes), and the **CoffinXP / Lostsec** writeup corpus. Attribution/licenses in `packs/`.
 
+---
+
 ## Three entry points
 
 ```
@@ -14,9 +16,74 @@ Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded 
                        [--mode bug-bounty|pentest|research]
 ```
 
-- **`/mad-hacks`** — the general operator skill. Loads `SKILL.md`, routes assets on CLASSIFY via `references/router.md` (3-tier lazy load — doctrine + loop always resident, family block on CLASSIFY, per-class assets on demand).
-- **`/mad-hunt`** — the bounty spine: scope-gate → policy preamble → per-host surface probe A–J → surface × payout-ranked specialist hunters (≥25 attempts/class) → 7-Q + `t3-verifier` REFUTE gate → `chain-builder` escalation → platform-ready draft. Adaptive-throttle, never auto-submits, never creates accounts. Loop spec: `references/mad-hunt.md`.
-- **`/cdc-research`** — different loop: hunt novel primitives, adversarially validate every one, refuse to stop at the first primitive, chain until a defined starting-privilege → impact goal is met. Three modes (bug-bounty / pentest / research), greybox default, blackbox as documented degraded mode. Layered halting: soft budget → FINAL_PUSH · 3-tick plateau tripwire · hard budget · operator interrupt. Spec: `references/cdc-harness.md`. State manager: `scripts/cdc-state.sh`.
+- **`/mad-hacks`** — general operator. Loads `SKILL.md`, routes assets via `references/router.md` (3-tier lazy load).
+- **`/mad-hunt`** — bounty spine: scope-gate → surface probe A–J → surface × payout-ranked specialists (≥25 attempts/class) → 7-Q + `t3-verifier` REFUTE gate → `chain-builder` escalation → platform-ready draft. Loop: `references/mad-hunt.md`.
+- **`/cdc-research`** — novel-vuln loop with chain-until-impact + layered halting (soft budget · plateau tripwire · hard budget · operator interrupt). Spec: `references/cdc-harness.md`. State: `scripts/cdc-state.sh`.
+
+---
+
+## The intelligence layer (the part that makes it get smarter)
+
+The canonical **file-brain** is the source of truth. Sitting on top of it:
+
+```
+    ┌──────────────────────────────────────┐
+    │        SOURCE (canonical)            │
+    │  references · scripts · tools ·      │
+    │  brain/{lessons,tools,payloads} ·    │
+    │  packs · agents · engagements        │
+    └──────────────┬───────────────────────┘
+                   │
+                   ▼
+    ┌──────────────────────────────────────┐
+    │        REGISTRY (regenerable)        │  scripts/build-registry.py
+    │  brain/registry/assets.jsonl (265)   │  common schema per asset:
+    │  brain/registry/assets.db (SQLite    │    id · type · title · description ·
+    │                    FTS5 / BM25)      │    capabilities · classes · technologies ·
+    │  brain/registry/assets.faiss         │    prerequisites · commands · outputs ·
+    │      (optional, opt-in)              │    provenance · epistemic_status · confidence
+    └──────────────┬───────────────────────┘
+                   │
+                   ▼
+    ┌──────────────────────────────────────┐
+    │      INTELLIGENCE ROUTER              │  scripts/intelligence-recall.sh
+    │      (Reciprocal Rank Fusion, k=60)   │
+    │                                       │
+    │    lex (FTS5)                         │  BM25-ranked, stdlib-only
+    │  + sem (FAISS, if installed)          │  MiniLM cosine
+    │  + writeups (6.7k row MCP corpus)     │  SQLite keyword
+    │  + target (.engagement/<t>/ state)    │  observed / tested / exhausted
+    │  ═════════════════════════════════    │
+    │    fused, deduplicated, ranked        │
+    └──────────────┬───────────────────────┘
+                   │
+                   ▼
+    ┌──────────────────────────────────────┐   scripts/engagement-state.sh
+    │      ENGAGEMENT STATE                 │   .engagement/<slug>/
+    │   TECHNOLOGY · OBSERVED · TESTED ·    │   EXHAUSTED.md as structured
+    │   EXHAUSTED · HYPOTHESES ·            │   [class][vector][variant] records
+    │   EVIDENCE.jsonl (epistemic ternary)  │   deadangle: OBSERVED/DERIVED/INFERRED/HYPOTHESIS
+    └──────────────┬───────────────────────┘
+                   │
+                   ▼
+    ┌──────────────────────────────────────┐
+    │       SPECIALIST HUNTERS              │  19 agents, all wired to:
+    │  xss / ssrf / idor / rce / ssti /     │  1. ToolSearch(burp,dalfox)
+    │  oauth / cors / csrf / xxe / sqli /   │  2. intelligence-recall.sh
+    │  open-redirect / subdomain-takeover / │  3. engagement-state.sh recall
+    │  race / business-logic / graphql /    │  4. probe → capture back:
+    │  file-upload / info-disclosure /      │       observe / tested /
+    │  cloud-recon / config-auditor         │       exhausted / evidence / learn
+    └──────────────────────────────────────┘
+
+    optional cache: brain-sync-ruflo.sh --from-registry
+    exports the registry with provenance.last_verified so ruflo staleness
+    is detectable at query time. Toolkit still works if ruflo disappears.
+```
+
+Every specialist hunter's Preflight preamble runs the same 3-step boot: ToolSearch → intelligence-recall → engagement-state recall, then probes, then writes results back. **The file tree remains authoritative; the registry is a regenerable index; the router hides where knowledge lives from the agents.**
+
+---
 
 ## Layout
 
@@ -37,30 +104,46 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 ├── scripts/             brain · scope · scope.py · preamble.py · preflight · recon · web-scan ·
 │                        surface-probe · xss-surface · code-audit · cloud-audit · mobile-audit ·
 │                        binary-audit · contract-audit · report · oob · cdc-state ·
-│                        ingest · optimize · reinstall-packs ·
-│                        build-writeup-corpus · refresh-writeup-feeds   (keyless)
-├── brain/               persistent memory: lesson-index · lessons.md · tools.md ·
-│                        payloads/<class>.txt (37 files) · targets/  (gitignored)
+│                        engagement-state · build-registry · build-embeddings ·
+│                        intelligence-recall · build-writeup-corpus · refresh-writeup-feeds ·
+│                        brain-sync-ruflo · reinstall-packs · ingest · optimize   (keyless)
+├── brain/               persistent memory:
+│   ├── lesson-index.md      class → keyword-set for recall-class
+│   ├── lessons.md           append-only global heuristics (60+)
+│   ├── tools.md             tools learned (30+)
+│   ├── payloads/            per-class libraries (37 files, 19k+ probes)
+│   ├── targets/             per-target memory (gitignored)
+│   └── registry/            REGENERABLE machine-readable index (gitignored)
+│       ├── assets.jsonl         265 rows, common schema
+│       ├── assets.db            SQLite FTS5 (BM25) lexical index
+│       ├── assets.faiss         optional FAISS semantic index
+│       └── assets.embed-map.jsonl
 ├── wordlists/           deduped: params · sensitive-files · content-discovery · raft · api-endpoints ·
 │                        common · onelistforall.txt.gz
-├── tools/               scanner scripts extracted from ingested repos
+├── tools/               scanner scripts extracted from ingested repos (48 files, all registry-indexed)
 ├── agents/              t3-{recon,scanner,exploiter,verifier,reporter}  (symlinked into ~/.claude/agents/)
 ├── packs/               attribution + methodology from ingested repos
 │                        (writeups/ · cyberstrike/ · strix/ · claude-bughunter/ · ai-pentesting/ ·
 │                         payloads-all-the-things/ · lostfuzzer/ · t3mp3st/  — all tracked)
 │                        (xalgorix/ · dalfox/ · rifteo-skills/  — externally cloned, .gitignored;
 │                         provenance + rehydration recipe in packs/UPSTREAM.md)
+├── .engagement/         per-target state (gitignored) — TECHNOLOGY / OBSERVED / TESTED /
+│                        EXHAUSTED / HYPOTHESES / EVIDENCE.jsonl / LOG
 ├── .cdc/                per-target CDC harness working state (gitignored)
 └── engagements/         per-target working evidence (gitignored)
 ```
+
+---
 
 ## Doctrine (non-negotiable — every run)
 
 1. **Authorization first.** `bash scripts/scope.sh init <target>` then `scripts/preflight.sh <target>`. A tool working or a host answering is **not** consent — authorization comes only from the engagement contract.
 2. **Execution modes.** `safe_command` → run. `receipt_required` (nmap, nuclei, ffuf, sqlmap, curl-vs-target, dalfox scan) → pause for explicit user OK. `catalog_only`/`import_only` (msfconsole, pacu, frida, hydra) → **never run here** — hand to the user.
-3. **VERIFY + REFUTE.** Real only if it appears in captured tool output. `t3-verifier` emits a mandatory visible verdict card with the **Verified / Inferred / Assumed ternary** ([`references/deadangle.md`](references/deadangle.md)) — a CONFIRMED verdict whose claims are majority-Inferred/Assumed is grounds for DOWNGRADED.
+3. **VERIFY + REFUTE.** Real only if it appears in captured tool output. `t3-verifier` emits a mandatory visible verdict card with the **Verified / Inferred / Assumed ternary** (`references/deadangle.md`) — a CONFIRMED verdict whose claims are majority-Inferred/Assumed is grounds for DOWNGRADED.
 4. **Redact** secrets/PII. **Absolute stops** apply regardless of scope (no credential entry, data deletion, fund movement, destructive payloads on the user's behalf).
 5. **No CVE / patch-diff / changelog shortcuts** as proof. Reproduce against the realistic deployment. Read dependency source when behavior depends on it — runtime is oracle, docs are hypothesis.
+
+---
 
 ## Installed arsenal (keyless, on this machine)
 
@@ -70,13 +153,64 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 **Secrets/crypto:** gitleaks · trufflehog · openssl · testssl.sh
 **OOB:** interactsh-client — wrapped by [`scripts/oob.sh`](scripts/oob.sh) (per-target ledger, seed/fire/poll/attribute)
 **Report:** pandoc / cmark / python-docx / weasyprint / wkhtmltopdf — whichever is present ([`scripts/report.sh build-{html,docx,pdf,all}`](scripts/report.sh))
+**Optional (semantic retrieval):** `pip3 install faiss-cpu sentence-transformers` — unlocks FAISS layer in `intelligence-recall.sh`
+
 `scripts/preflight.sh <target>` prints live availability. Active tools are `receipt_required` — used only with confirmed scope.
+
+---
 
 ## MCP integration (auto-detected)
 
-- **Burp Suite MCP** — every specialist hunter runs `ToolSearch("burp proxy repeater intruder collaborator")` at dispatch; if present, Repeater becomes the primary probe channel + Collaborator the primary OOB backend. Register: `claude mcp add burp ...` (recipe: [`references/burp-integration.md`](references/burp-integration.md)).
-- **dalfox v3 MCP** — 6-tool stdio server (`scan_with_dalfox`, `get_results_dalfox`, `list_scans_dalfox`, `cancel_scan_dalfox`, `delete_scan_dalfox`, `preflight_dalfox`). `xss-hunter` prefers it when loaded. Register: `claude mcp add dalfox -- dalfox mcp`. Guide: [`references/dalfox-guide.md`](references/dalfox-guide.md).
-- **writeup-search MCP** — search 6,749-row corpus of practitioner writeups + disclosed-bounty pointers. See below for corpus builder.
+- **Burp Suite MCP** — every specialist hunter runs `ToolSearch("burp proxy repeater intruder collaborator")` at dispatch; if present, Repeater = primary probe channel + Collaborator = primary OOB backend. Register: `claude mcp add burp ...` (recipe: [`references/burp-integration.md`](references/burp-integration.md)).
+- **dalfox v3 MCP** — 6-tool stdio server (`scan_with_dalfox`, `get_results_dalfox`, `list_scans_dalfox`, `cancel_scan_dalfox`, `delete_scan_dalfox`, `preflight_dalfox`). `xss-hunter` prefers when loaded. Register: `claude mcp add dalfox -- dalfox mcp`. Guide: [`references/dalfox-guide.md`](references/dalfox-guide.md).
+- **writeup-search MCP** — search 6,749-row corpus (23 CoffinXP full-body + 6,554 pentester.land + 172 fresh RSS). See "Writeup corpus" below.
+- **bounty-platforms MCP** — H1/Bugcrowd/Immunefi/YesWeHack scope + policy + hacktivity + submit + draft-report tools.
+- **ruflo MCP (optional cache)** — after `bash scripts/brain-sync-ruflo.sh --from-registry`, use `mcp__ruflo__memory_import_claude` to populate a semantic cache namespaced `"mad-hacks"`. Provenance timestamps make staleness detectable. **Never a source of truth**; the file-brain is.
+
+---
+
+## An effective run (concrete)
+
+```bash
+# 0. Authorization
+bash scripts/scope.sh init <target>
+bash scripts/preflight.sh <target>
+
+# 1. Engagement state — capture what you know before probing
+bash scripts/engagement-state.sh init <target> --tech "Next.js 14 App Router on Vercel Edge, Postgres, Cloudflare, defaults"
+bash scripts/engagement-state.sh observe <target> "webhook /api/hook accepts url= param"
+bash scripts/engagement-state.sh hypothesis <target> add "SSRF via redirect chain to internal ELB" --priority high
+
+# 2. Intelligence router — single query surface
+bash scripts/intelligence-recall.sh "webhook ssrf redirect chain" --target <target> --class ssrf --limit 12
+# Returns: fused lexical + semantic + writeups + target-memory bundle
+# (agents call this instead of the old 3-way brain.sh chain)
+
+# 3. Pick the right entry point
+/mad-hunt <target>          # bounty
+/cdc-research <target>      # research
+# (both drive specialist hunters whose Preflight preambles auto-run steps 2+3)
+
+# 4. Blind classes seed OOB attribution
+bash scripts/oob.sh seed <target> ssrf webhook-url-param
+
+# 5. Capture back (mandatory after every dispatch)
+bash scripts/engagement-state.sh evidence <target> add \
+    --observation "server responded 500 'connection refused' on http://169.254.169.254" \
+    --evidence "evidence/ssrf-imds.txt" \
+    --interpretation "backend can reach IMDS host but v1 is blocked" \
+    --hypothesis "IMDSv2 enabled — need token flow" \
+    --epistemic DERIVED --confidence HIGH
+bash scripts/engagement-state.sh exhausted <target> ssrf url_parameter direct-metadata "IMDSv1 blocked — v2 token flow required"
+bash scripts/brain.sh learn "IMDSv2 blocked → probe v2 token flow via PUT before assuming SSRF is dead"
+
+# 6. End-of-session
+# write .t3mp3st/<target>/HANDOFF.md per references/engagement-handoff.md
+bash scripts/refresh-writeup-feeds.sh        # optional — pull fresh RSS entries
+bash scripts/build-registry.py               # optional — refresh the index if you added lessons/tools
+```
+
+---
 
 ## Writeup corpus (`writeup-search` MCP data source)
 
@@ -87,31 +221,33 @@ bash scripts/refresh-writeup-feeds.sh         # +11 RSS feeds (PortSwigger/Datad
 pkill -f mcp-writeup-server                   # Claude Code auto-respawns w/ fresh DB (or /mcp reconnect)
 ```
 
-Corpus lives at `~/.local/share/pentest-writeups/metadata.db` (SQLite). Tools available after reconnect: `search_writeups` (keyword search across full text + metadata), `search_techniques` (per-class technique packs), `search_payloads` (context-organized payload pack + mutation matrix + detection ladder), `get_writeup`. Source catalog: [`references/writeup-sources.md`](references/writeup-sources.md).
+Corpus lives at `~/.local/share/pentest-writeups/metadata.db` (SQLite). Tools available after reconnect: `search_writeups` (keyword search across full text + metadata), `search_techniques` (per-class technique packs), `search_payloads` (context-organized payload pack + mutation matrix + detection ladder), `get_writeup`. Source catalog: [`references/writeup-sources.md`](references/writeup-sources.md). **The intelligence router queries this alongside the registry.**
+
+---
 
 ## Feed it more (it compounds)
 
 ```bash
 bash scripts/ingest.sh <repo-or-file>          # classify + propose merges (read-only)
-bash scripts/brain.sh recall <target>          # target-specific memory (prior findings, exhausted vectors)
-bash scripts/brain.sh recall-class <class>     # class-relevant lessons (auto-selected via brain/lesson-index.md)
+bash scripts/brain.sh recall <target>          # target-specific memory
+bash scripts/brain.sh recall-class <class>     # class-relevant lessons
+bash scripts/brain.sh search "<query>"         # NEW — hybrid registry search (uses FTS5)
+bash scripts/brain.sh registry [--rebuild]     # NEW — registry ops
 bash scripts/brain.sh payload <class> <file>   # wordlists/payloads → brain (deduped)
-bash scripts/brain.sh tool  "<name> — <use>"   # new tools learned
-bash scripts/brain.sh learn "<heuristic>"      # reusable lessons — every specialist hunter auto-pulls these
-bash scripts/optimize.sh [--aggressive]        # keep storage lean (dedupe/compress)
+bash scripts/brain.sh tool "<name> — <use>"    # tools learned
+bash scripts/brain.sh learn "<heuristic>"      # reusable lessons — every hunter auto-pulls
+bash scripts/optimize.sh [--aggressive]        # keep storage lean
 ```
-
-Every specialist hunter (xss-hunter, ssrf-hunter, idor-hunter, rce-hunter, ssti-hunter, oauth-hunter, cors-hunter, csrf-hunter, xxe-hunter, sqli-hunter, open-redirect, subdomain-takeover, race-condition, business-logic, graphql-audit, file-upload, info-disclosure, cloud-recon, config-auditor) has a **Preflight — connect the swarm** preamble that: (1) `ToolSearch("burp")` for MCP autodetect, (2) `brain.sh recall-class <class>` for lesson auto-pull, (3) blind classes (ssrf/xxe/sqli/rce/ssti) also seed `scripts/oob.sh` for attribution-safe callback loops.
 
 Methodology docs & reports go in `packs/`. Externally-cloned packs (xalgorix/dalfox/rifteo-skills) are gitignored — rehydrate on a fresh clone via `bash scripts/reinstall-packs.sh` (upstream URLs + pinned commits in `packs/UPSTREAM.md`).
 
+---
+
 ## Session handoff (end-of-day)
 
-Write `.t3mp3st/<target>/HANDOFF.md` following the template in [`references/engagement-handoff.md`](references/engagement-handoff.md) — under 100 lines, findings-by-id, coverage tested/skipped/partial, open threads, ordered next-steps specific enough to run without additional context. Next session opens with `cat HANDOFF.md` + `brain.sh recall`.
+Write `.t3mp3st/<target>/HANDOFF.md` per [`references/engagement-handoff.md`](references/engagement-handoff.md) — under 100 lines, findings-by-id, coverage tested/skipped/partial, open threads, ordered next-steps. Next session opens with `cat HANDOFF.md` + `bash scripts/engagement-state.sh recall <target>`.
 
-## Optional: ruflo intelligence layer
-
-`scripts/brain-sync-ruflo.sh` exports the brain for **ruflo** semantic memory (fuzzy cross-engagement recall + pattern-learning). Memory only — the `t3-*` subagents remain the orchestrator. The native file-brain works standalone; ruflo is an upgrade, not a dependency.
+---
 
 ## Authorized use only
 

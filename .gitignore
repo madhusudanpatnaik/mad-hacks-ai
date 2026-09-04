@@ -30,3 +30,10 @@ packs/rifteo-skills/
 # Asset registry — regenerable from source via scripts/build-registry.py.
 # Canonical remains the file tree; this is the machine-readable index.
 brain/registry/
+
+# Engagement state — per-target working memory, never commit
+.engagement/
+
+# Python compilation artifacts
+__pycache__/
+*.pyc

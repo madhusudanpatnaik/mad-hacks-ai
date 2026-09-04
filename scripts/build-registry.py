@@ -44,6 +44,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY_DIR = REPO / "brain" / "registry"
 REGISTRY_FILE = REGISTRY_DIR / "assets.jsonl"
+FTS_DB = REGISTRY_DIR / "assets.db"     # SQLite FTS5 index (BM25 ranking)
 
 # ─── class keyword map (aligned with brain/lesson-index.md) ──
 CLASS_KEYWORDS = {
@@ -420,6 +421,75 @@ def write_registry(rows):
         for row in rows:
             f.write(json.dumps(row, separators=(",", ":")) + "\n")
 
+def write_fts_index(rows):
+    """Build SQLite FTS5 index for BM25-ranked lexical search (stdlib only)."""
+    import sqlite3
+    if FTS_DB.exists():
+        FTS_DB.unlink()
+    conn = sqlite3.connect(str(FTS_DB))
+    conn.executescript("""
+        CREATE VIRTUAL TABLE assets USING fts5(
+            id UNINDEXED,
+            type UNINDEXED,
+            path UNINDEXED,
+            title,
+            description,
+            capabilities,
+            classes,
+            technologies,
+            provenance UNINDEXED,
+            row_json UNINDEXED,
+            tokenize = 'porter unicode61 remove_diacritics 2'
+        );
+    """)
+    for r in rows:
+        conn.execute(
+            "INSERT INTO assets(id,type,path,title,description,capabilities,classes,technologies,provenance,row_json) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (
+                r["id"], r["type"], r["path"],
+                r.get("title", "") or "",
+                r.get("description", "") or "",
+                " ".join(r.get("capabilities", [])),
+                " ".join(r.get("classes", [])),
+                " ".join(r.get("technologies", [])),
+                json.dumps(r.get("provenance", {})),
+                json.dumps(r, separators=(",", ":")),
+            )
+        )
+    conn.commit()
+    conn.close()
+
+def fts_search(query, limit=15, type_filter=None):
+    """BM25-ranked search via SQLite FTS5. Auto-quotes phrase, handles bare words."""
+    import sqlite3
+    if not FTS_DB.exists():
+        return []
+    conn = sqlite3.connect(str(FTS_DB))
+    conn.row_factory = sqlite3.Row
+    # Sanitize + build FTS5 MATCH expression: each word as a prefix search, ANDed
+    words = re.findall(r"[A-Za-z0-9_-]+", query)
+    if not words:
+        return []
+    match_expr = " AND ".join(f'"{w}"*' for w in words)
+    sql = "SELECT row_json, bm25(assets) AS rank FROM assets WHERE assets MATCH ?"
+    params = [match_expr]
+    if type_filter:
+        sql += " AND type = ?"
+        params.append(type_filter)
+    sql += " ORDER BY rank LIMIT ?"
+    params.append(limit)
+    results = []
+    try:
+        for row in conn.execute(sql, params):
+            r = json.loads(row["row_json"])
+            r["_score"] = -row["rank"]  # bm25 is negative; flip so higher=better
+            results.append(r)
+    except sqlite3.OperationalError:
+        pass  # bad FTS syntax — fall through
+    conn.close()
+    return results
+
 def load_registry():
     if not REGISTRY_FILE.exists():
         return []
@@ -465,22 +535,30 @@ def main():
         return
 
     write_registry(rows)
+    write_fts_index(rows)
     print(f"✅ wrote {len(rows)} rows → {REGISTRY_FILE.relative_to(REPO)}")
+    print(f"✅ built FTS5 index → {FTS_DB.relative_to(REPO)}  ({FTS_DB.stat().st_size // 1024} KB)")
     for t, n in sorted(counts.items(), key=lambda x: -x[1]):
         print(f"    {n:>5}  {t}")
 
     if args.search:
         print()
-        print(f"── search '{args.search}' ──")
-        results = search_registry(rows, args.search)
+        print(f"── search '{args.search}' (BM25 via FTS5) ──")
+        results = fts_search(args.search)
+        if not results:
+            # fallback: legacy substring scan over JSONL
+            print("  (no FTS5 hits — falling back to substring scan)")
+            for score, row in search_registry(rows, args.search):
+                results.append({**row, "_score": score})
         if args.json:
-            print(json.dumps([r for _, r in results], indent=2))
+            print(json.dumps(results, indent=2))
             return
-        for score, row in results:
+        for row in results:
             path = row.get("path", "?")
             cls = ",".join(row.get("classes", [])[:3])
-            print(f"  [{score:>3}]  [{row['type']:<9}]  {row['title'][:60]:60s}  ({cls})")
-            print(f"           {path}")
+            score = row.get("_score", 0)
+            print(f"  [{score:>6.2f}]  [{row['type']:<9}]  {row['title'][:60]:60s}  ({cls})")
+            print(f"              {path}")
 
 if __name__ == "__main__":
     main()

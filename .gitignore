@@ -41,3 +41,4 @@ brain/registry/
 # Python compilation artifacts
 __pycache__/
 *.pyc
+packs/Awesome-Bugbounty-Writeups/

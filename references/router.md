@@ -117,7 +117,9 @@ Hidden-param discovery (feeds IDOR/SSRF/LFI): `params` payload + arjun/x8. 403 w
 
 ## Secrets scanning
 
-- **packs/secrets-patterns-db/** — 1610 curated regex patterns for API-key / token / credential leaks (mazen160). Use as the pattern DB for trufflehog / gitleaks. High-confidence patterns are the spot-check first pass; low-confidence needs manual triage. See brain/lessons.md '2026-11 SECRETS SCANNING' entry for the ladder.
+- **`scripts/secrets-scan.sh`** — WRAPPER (canonical entry point). Runs trufflehog + gitleaks with pre-generated configs from `brain/registry/secrets-rules/`. Verified end-to-end. Flags: `--high-only` (883 high-confidence), `--scanner {trufflehog|gitleaks|both}`, `--verify` (receipt_required, hits provider APIs), `--rebuild-rules`, `--out <dir>`. See `brain/lessons.md` "SECRETS SCANNING WRAPPER" for the workflow-integrated ladder.
+- **packs/secrets-patterns-db/** — 1610 curated regex patterns for API-key / token / credential leaks (mazen160). Backing pattern DB for the wrapper above. Confidence: 883 high / 727 low. All regex ReDoS-safe. Rebuild rules after pack update: `bash scripts/secrets-scan.sh --rebuild-rules`.
+- **`brain/registry/secrets-rules/`** — pre-generated trufflehog-v3.yml (204K) + gitleaks.toml (143K), committed. Rehydratable via `--rebuild-rules` if the pack changes.
 
 ## Cloudflare / origin discovery
 
@@ -127,3 +129,4 @@ Hidden-param discovery (feeds IDOR/SSRF/LFI): `params` payload + arjun/x8. 403 w
 
 - **packs/Poc/** — shadowsock5/Poc. 72 vendor-organized CVE POC directories: Confluence, Jira, Bitbucket, Jenkins, GitLab, Grafana, Nexus, Exchange, ActiveMQ, Weblogic, Log4j, Fastjson, more. Use for stack-matched POCs. See brain/lessons.md '2026-11 SHADOWSOCK5/POC MAP'.
 - **packs/exploitarium/** — bikini/exploitarium. 39 self-contained POCs for browser RCEs, container escapes, server-app RCEs (Discourse/MyBB/NodeBB/Nextcloud/Flowise), library bugs. 12 CVEs assigned (CVE-2026-58049..58058, 58592, 58593).
+- **packs/Awesome-Bugbounty-Writeups/** — devanshbatham/Awesome-Bugbounty-Writeups. Curated index of 600 disclosed writeups across 16 vuln classes: XSS (294 · dominant), RCE (68), CSRF (49), SQLi (34), SSRF (27), CORS (15), LFI (13), IDOR (5), 2FA (10), Race (12), Auth-bypass (12), Clickjacking (22), DOS (11), Subdomain takeover (22), BOF (6), Android (1). 130 URLs folded into writeup-corpus DB (metadata.db, now 6879 rows) — searchable via mcp__writeup-search__search_writeups + `SELECT ... WHERE tags LIKE '%<Class>%'`.

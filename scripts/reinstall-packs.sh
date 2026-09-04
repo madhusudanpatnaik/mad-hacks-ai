@@ -24,6 +24,7 @@ PACKS=(
   "exploitarium|https://github.com/bikini/exploitarium|cdcbe772ed7ee2a36f2d84a93018f820a32a4a9f"
   "CloudRip|https://github.com/moscovium-mc/CloudRip|5bd7d54a6976e86bcb5a816886b2b8432a81967c"
   "Poc|https://github.com/shadowsock5/Poc|b6e7ec272fa6f4bc93918b4d7ba7d83ce8940eaa"
+  "Awesome-Bugbounty-Writeups|https://github.com/devanshbatham/Awesome-Bugbounty-Writeups|72010067cd49196f8f45b9137d1c0d06ad5ba915"
 )
 
 command -v git >/dev/null || { echo "reinstall-packs: git required"; exit 3; }

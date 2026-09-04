@@ -2,7 +2,7 @@
 
 A **single-folder, keyless offensive-security toolkit for Claude Code.** This session is the backbone — no API keys, no server, no second bill. It runs a full kill-chain (recon → weaponize → exploit → verify → report) over real system tools, under a strict authorization + evidence + anti-fabrication doctrine, backed by a **persistent brain that compounds** across engagements and every repo you feed it.
 
-Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded in: **xalgorix** (Apache-2.0 · autonomous-pentest methodology), **hahwul/dalfox** v3 (MIT · Rust XSS scanner with native OOB + MCP), **Rifteo/skills** (MIT · 38-skill peer library — 2 doctrine promotions, 10 on-demand attack lanes), **mazen160/secrets-patterns-db** (1610 curated secret regexes), **bikini/exploitarium** (39 POC folders across 12 CVEs), **moscovium-mc/CloudRip** (CF origin discovery), **shadowsock5/Poc** (72 vendor CVE POC dirs), and the **CoffinXP / Lostsec** writeup corpus. Attribution/licenses in `packs/`.
+Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded in: **xalgorix** (Apache-2.0 · autonomous-pentest methodology), **hahwul/dalfox** v3 (MIT · Rust XSS scanner with native OOB + MCP), **Rifteo/skills** (MIT · 38-skill peer library — 2 doctrine promotions, 10 on-demand attack lanes), **mazen160/secrets-patterns-db** (1610 curated secret regexes, wired via `scripts/secrets-scan.sh`), **bikini/exploitarium** (39 POC folders across 12 CVEs), **moscovium-mc/CloudRip** (CF origin discovery), **shadowsock5/Poc** (72 vendor CVE POC dirs), **devanshbatham/Awesome-Bugbounty-Writeups** (600 curated writeups across 16 classes, 130 net-new URLs folded into writeup corpus), and the **CoffinXP / Lostsec** writeup corpus. Attribution/licenses in `packs/`.
 
 ---
 
@@ -257,7 +257,7 @@ bash scripts/brain.sh learn "<heuristic>"      # reusable lessons — every hunt
 bash scripts/optimize.sh [--aggressive]        # keep storage lean
 ```
 
-Methodology docs & reports go in `packs/`. Externally-cloned packs (xalgorix/dalfox/rifteo-skills/secrets-patterns-db/exploitarium/CloudRip/Poc) are gitignored — rehydrate on a fresh clone via `bash scripts/reinstall-packs.sh` (upstream URLs + pinned commits in `packs/UPSTREAM.md`).
+Methodology docs & reports go in `packs/`. Externally-cloned packs (xalgorix/dalfox/rifteo-skills/secrets-patterns-db/exploitarium/CloudRip/Poc/Awesome-Bugbounty-Writeups) are gitignored — rehydrate on a fresh clone via `bash scripts/reinstall-packs.sh` (upstream URLs + pinned commits in `packs/UPSTREAM.md`).
 
 ---
 

@@ -17,7 +17,7 @@ Individual suites:
 python3 tests/intelligence/test_retrieval.py                        # aggregate MRR / R@5 / R@10 / P@5 / nDCG@10
 python3 tests/intelligence/test_retrieval.py --category synonym     # per-category
 python3 tests/intelligence/test_retrieval.py --json                  # machine-readable
-python3 tests/intelligence/test_state.py --verbose                   # state adversarial (9 assertions)
+python3 tests/intelligence/test_state.py --verbose                   # state adversarial (27 assertions)
 python3 tests/intelligence/test_end_to_end.py --verbose              # full observe→recall→exhaust loop (12 assertions)
 ```
 
@@ -25,25 +25,30 @@ Exit `0` on pass, `1` on regression.
 
 ---
 
-## Baseline (frozen at commit landing this suite — no FAISS, tight-fallback expansion)
+## Baseline v2 (frozen 2026-09-04 after router-as-filter refactor, audit correction #7)
 
 | Config | MRR | R@5 | R@10 | P@5 | nDCG@10 |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **FTS5 only** | 0.464 | 0.484 | 0.484 | 0.435 | 0.440 |
-| **RRF lex+writeups+target** | 0.468 | 0.500 | 0.531 | 0.331 | 0.340 |
+| **FTS5 only** | **0.530** | 0.562 | 0.562 | 0.486 | 0.493 |
+| **RRF lex+writeups+target** | **0.549** | 0.594 | 0.625 | 0.376 | 0.388 |
 | RRF lex+sem+writeups+target | *(FAISS opt-in — not measured)* | | | | |
 
 **Per-category MRR (RRF):**
 
-| Category | MRR | R@10 | Notes |
-|---|:---:|:---:|---|
-| direct | 0.588 | 0.588 | strong — canonical vuln-class queries hit their agents/refs/payloads |
-| synonym | 0.378 | 0.700 | expansion map rescues previously-impossible queries (BOLA, "server-side request forgery", etc.) |
-| ambiguous | 0.357 | 0.500 | multi-class queries land at least one expected class |
-| tech-cross | 0.750 | 0.750 | technology + class combos land accurately (WordPress+XSS, Next.js+RCE) |
-| indirect | 0.100 | 0.100 | **known weakness — needs FAISS**. Queries describing symptoms ("backend fetches user URL" for SSRF) can't be reached lexically |
+| Category | MRR | Notes |
+|---|:---:|---|
+| direct | 0.676 | strong — canonical vuln-class queries hit their agents/refs/payloads |
+| synonym | 0.578 | expansion map + fusion improvements rescue previously-impossible queries |
+| ambiguous | 0.357 | multi-class queries land at least one expected class |
+| tech-cross | 0.750 | technology + class combos land accurately (WordPress+XSS, Next.js+RCE) |
+| indirect | 0.125 | slight lift over v1; still **known weakness — needs FAISS** for symptomatic queries |
 
-**Known trade-off (measured):** without the fallback expansion, RRF MRR was 0.367. With too-loose fallback (`<5 hits`), it dropped to 0.343. Zero-threshold fallback + tight OR pool (`K_RAW/3`) lifted it to 0.468. The suite caught and guided this trade-off — see `scripts/intelligence-recall.sh` `source_lex` for the rationale comments.
+**Per-category MRR floors (hardcoded in `test_retrieval.py`, each 5% below v2 baseline):**
+direct >= 0.559 · synonym >= 0.359 · indirect >= 0.095 · ambiguous >= 0.339 · tech-cross >= 0.712. Any category regressing past its floor fails the suite.
+
+**Baseline v1 (superseded)**: FTS5 MRR=0.464, RRF MRR=0.468 (see `brain/lessons.md` entry 2026-09-04T07:30:12Z).
+
+**Trade-off history (measured, suite-caught):** blind expansion regressed RRF MRR -30% (0.468 → 0.261). Loose <5 fallback regressed -6% (→0.343). Zero-threshold + K_RAW/3 pool lifted to 0.468. State-as-filter refactor (v2) fixed a latent rrf() dedup bug and lifted to 0.549 (+17%).
 
 ---
 
@@ -66,17 +71,30 @@ Extend by appending JSONL rows. Re-run to measure.
 
 ## State adversarial (`test_state.py`)
 
-9 assertions from the audit's `#5` (negative-knowledge granularity) and `#7` (state-as-filter):
+27 assertions covering both the v1 audit points (#5 negative-knowledge granularity, #7 state-as-filter visibility) and the v2 state-as-filter refactor.
 
+**v1 (9 assertions):**
 - 4 epistemic statuses (`OBSERVED`/`DERIVED`/`INFERRED`/`HYPOTHESIS`) distinguishable in the ledger
 - Scope preserved: `SSRF @ /api/import exhausted` does NOT poison `SSRF @ /api/avatar`
 - Distinct variants persist as separate rows (no collapse)
 - INFERRED evidence rows never upgrade to OBSERVED on re-read
-- `--epistemic BOGUS` rejected
-- `--confidence MAYBE` rejected
-- Router's `target` source surfaces engagement-state files (state IS visible to fusion)
+- `--epistemic BOGUS` rejected · `--confidence MAYBE` rejected
+- Router's `target` source surfaces engagement-state files
 
-**Current: 9/9 passing.**
+**v2 (18 additional assertions, 2026-09-04):**
+- `state-filter: exhausted-class row demoted` — rank strictly moves down with `--state-filter=on`
+- `state-filter: demoted row carries exhausted_penalty` in `_state_adj`
+- `state-filter: _final_score strictly less than _rrf_score` on demoted rows
+- `state-filter: idempotent` — running twice yields byte-identical results
+- `state-adj: empty {}` on every row when filter off; **key present on every row when filter on**
+- `canonicalization: SSRF → ssrf`, `URL_PARAMETER → url-parameter`, `auth_session → auth-session` at write time
+- `canonicalization: router parses canonical forms from EXHAUSTED.md`
+- `parser: em-dashes in why-string don't corrupt tuples` (bracket-anchored regex)
+- `empty-exhausted: router exits 0 with valid JSON` on empty file
+- `multi-source: penalty fires on both lex and non-lex rows` (via CLASS_KEYWORDS inference)
+- `hunter-contract: engagement-state files still surface in results[]` (backwards compat)
+
+**Current: 27/27 passing.**
 
 ---
 

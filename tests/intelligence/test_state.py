@@ -199,6 +199,252 @@ class Test:
             p.returncode != 0 and "HIGH|MEDIUM|LOW" in (p.stdout + p.stderr),
         )
 
+    # ═══════════════════════════════════════════════════════════════════
+    # NEW TESTS (2026-09-04): state-as-filter refactor (audit correction #7)
+    # Each of these came from the router-filter-refactor-critique workflow's
+    # synthesis. Every test proves a specific new invariant added by
+    # apply_state_filter() in scripts/intelligence-recall.sh.
+    # ═══════════════════════════════════════════════════════════════════
+
+    def _recall(self, query, target=None, state_filter=None, sources=None, extra=None):
+        """Helper: run router --json, return parsed dict. Empty dict on JSON fail."""
+        cmd = ["bash", str(RECALL_SH), query, "--limit", "10", "--json"]
+        if target:       cmd += ["--target", target]
+        if state_filter: cmd += ["--state-filter", state_filter]
+        if sources:      cmd += ["--sources", sources]
+        if extra:        cmd += list(extra)
+        p = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO))
+        if p.returncode != 0:
+            return {"__error__": p.stderr[:200]}
+        try:
+            return json.loads(p.stdout)
+        except json.JSONDecodeError:
+            return {}
+
+    # ─── test 6: exhausted-class rank demotion is observable ───
+    def test_exhausted_demotes_rank(self):
+        """A row whose classes intersect exhausted must appear at a LOWER rank
+        with --state-filter=on than with --state-filter=off (or without target)."""
+        # Ensure a stale exhausted entry exists (setup put ssrf/url_parameter/direct-metadata)
+        # setup() clears state; recompose it here for isolation:
+        sh("bash", str(STATE_SH), "exhausted", self.target,
+           "ssrf", "url_parameter", "direct-metadata",
+           "AWS IMDSv2 blocked", "evidence/x.txt")
+
+        query = "SSRF url parameter"
+        without = self._recall(query, target=self.target, state_filter="off")
+        with_   = self._recall(query, target=self.target, state_filter="on")
+
+        def find_ssrf_row(data):
+            for i, r in enumerate(data.get("results", []), 1):
+                cls = [c.lower() for c in (r.get("classes") or []) if isinstance(c, str)]
+                if "ssrf" in cls:
+                    return (i, r)
+            return (None, None)
+
+        base_rank, base_row = find_ssrf_row(without)
+        post_rank, post_row = find_ssrf_row(with_)
+        self.check(
+            "state-filter: exhausted-class row demoted (rank moves down)",
+            base_rank is not None and post_rank is not None and post_rank > base_rank,
+            detail=f"without={base_rank} with={post_rank}",
+        )
+        self.check(
+            "state-filter: demoted row carries exhausted_penalty in _state_adj",
+            post_row is not None
+            and post_row.get("_state_adj", {}).get("exhausted_penalty") == 0.4,
+            detail=str(post_row.get("_state_adj") if post_row else "no row"),
+        )
+        self.check(
+            "state-filter: _final_score strictly less than _rrf_score on demoted row",
+            post_row is not None
+            and post_row.get("_final_score", 0) < post_row.get("_rrf_score", 0),
+        )
+
+    # ─── test 7: state filter is idempotent ─────────────────
+    def test_state_filter_idempotent(self):
+        """Running the same query twice in a row yields byte-identical results
+        (proves _final_score is derived from _rrf_score, not from previous _final_score)."""
+        query = "SSRF url parameter"
+        a = self._recall(query, target=self.target, state_filter="on")
+        b = self._recall(query, target=self.target, state_filter="on")
+        # Compare score-carrying fields row-by-row
+        ra, rb = a.get("results", []), b.get("results", [])
+        if len(ra) != len(rb) or not ra:
+            self.check("idempotent: same-length result sets", False, detail=f"len={len(ra)} vs {len(rb)}")
+            return
+        equal = all(
+            round(x["_final_score"], 9) == round(y["_final_score"], 9)
+            and round(x["_rrf_score"], 9) == round(y["_rrf_score"], 9)
+            and x.get("_state_adj", {}) == y.get("_state_adj", {})
+            for x, y in zip(ra, rb)
+        )
+        self.check("state-filter: idempotent across repeated runs", equal)
+
+    # ─── test 8: _state_adj is always present ───────────────
+    def test_state_adj_always_present(self):
+        """Every result row carries _state_adj (empty dict when no filter fires).
+        Protects consumers from KeyError on rows they iterate."""
+        # Without target: _state_adj on every row is {}
+        no_target = self._recall("XSS reflected", state_filter="off")
+        all_empty = all(
+            r.get("_state_adj") == {} for r in no_target.get("results", [])
+        )
+        self.check(
+            "state-adj: empty {} on every row when filter off",
+            all_empty and len(no_target.get("results", [])) > 0,
+        )
+        # With target: every row still has key (populated on match, empty otherwise)
+        with_t = self._recall("SSRF metadata", target=self.target, state_filter="on")
+        all_present = all(
+            "_state_adj" in r for r in with_t.get("results", [])
+        )
+        self.check(
+            "state-adj: key present on every row when filter on",
+            all_present and len(with_t.get("results", [])) > 0,
+        )
+
+    # ─── test 9: case normalization at write + read ─────────
+    def test_exhausted_class_case_normalization(self):
+        """Writing SSRF (uppercase) or auth_session (underscore) must normalize
+        to the canonical kebab form the router sees. Both write-side (in the
+        EXHAUSTED.md file) AND read-side (in the parsed exhausted_classes set)."""
+        # Fresh state dir for this test
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        sh("bash", str(STATE_SH), "exhausted", self.target,
+           "SSRF", "URL_PARAMETER", "Direct-Metadata", "case-normalization test")
+        sh("bash", str(STATE_SH), "exhausted", self.target,
+           "auth_session", "cookie", "sameSite", "underscore-normalization test")
+
+        # File must contain kebab-lower forms
+        exh_content = (self.state_dir / "EXHAUSTED.md").read_text()
+        self.check(
+            "canonicalization: SSRF written as 'ssrf'",
+            "[ssrf]" in exh_content and "[SSRF]" not in exh_content,
+        )
+        self.check(
+            "canonicalization: URL_PARAMETER written as 'url-parameter'",
+            "[url-parameter]" in exh_content and "[URL_PARAMETER]" not in exh_content,
+        )
+        self.check(
+            "canonicalization: auth_session written as 'auth-session'",
+            "[auth-session]" in exh_content and "[auth_session]" not in exh_content,
+        )
+
+        # Router must parse the canonical set correctly
+        data = self._recall("ssrf test", target=self.target, state_filter="on")
+        exh_classes = set(data.get("state", {}).get("exhausted_classes", []))
+        self.check(
+            "canonicalization: router parses 'ssrf' and 'auth-session' from EXHAUSTED.md",
+            {"ssrf", "auth-session"}.issubset(exh_classes),
+            detail=f"got: {sorted(exh_classes)}",
+        )
+
+    # ─── test 10: em-dash in why string doesn't corrupt parse ─
+    def test_exhausted_parser_handles_em_dash_in_why(self):
+        """Why-string containing an em-dash used to break naive delimiter splits.
+        Bracket-anchored regex must parse cleanly."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        # why contains em-dash AND colon AND emoji — worst-case free-form content
+        why = "blocked — WAF filters localhost — and rejects 127.0.0.1"
+        sh("bash", str(STATE_SH), "exhausted", self.target,
+           "ssrf", "url_parameter", "direct-metadata", why)
+        data = self._recall("ssrf", target=self.target, state_filter="on")
+        tuples = data.get("state", {}).get("exhausted_tuples", [])
+        expected = ["ssrf", "url-parameter", "direct-metadata"]
+        self.check(
+            "parser: em-dashes in why-string don't corrupt the (class,vector,variant) tuple",
+            any(t == expected for t in tuples),
+            detail=f"got tuples: {tuples}",
+        )
+        classes = set(data.get("state", {}).get("exhausted_classes", []))
+        self.check(
+            "parser: ssrf class extracted despite em-dash noise in why",
+            "ssrf" in classes,
+        )
+
+    # ─── test 11: empty EXHAUSTED.md doesn't crash the router ─
+    def test_recall_on_empty_exhausted_md(self):
+        """After init but before any exhaust command, recall with --target must:
+        succeed, return valid JSON, exhausted_classes == [], no rows demoted."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        data = self._recall("XSS", target=self.target, state_filter="on")
+        self.check(
+            "empty-exhausted: router exits 0 with valid JSON",
+            data != {} and "__error__" not in data,
+        )
+        self.check(
+            "empty-exhausted: exhausted_classes is empty list",
+            data.get("state", {}).get("exhausted_classes", None) == [],
+        )
+        rows = data.get("results", [])
+        no_penalty = all(
+            not r.get("_state_adj", {}).get("exhausted_penalty")
+            for r in rows
+        )
+        self.check(
+            "empty-exhausted: no row carries an exhausted_penalty",
+            no_penalty and len(rows) > 0,
+        )
+
+    # ─── test 12: penalty fires on all source kinds, not just lex ─
+    def test_class_penalty_fires_on_all_source_kinds(self):
+        """The row-classes helper must extract classes from lex arrays, writeup
+        tag strings, sem rows (title inference), and target rows (title/desc
+        inference). Prove by querying a phrase that surfaces multiple source
+        kinds, then checking demotion fires on at least the lex row and one
+        non-lex row."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        sh("bash", str(STATE_SH), "exhausted", self.target,
+           "ssrf", "url_parameter", "direct-metadata", "test")
+        # This query surfaces the ssrf-hunter agent (lex) AND target-state rows.
+        # Use limit=20 so we see the full mixed source pool — the target rows
+        # (LOG.md, EXHAUSTED.md) that mention ssrf-via-inference land past rank
+        # 10 given the number of writeup content-matches on the query "SSRF".
+        data = self._recall("SSRF", target=self.target,
+                           state_filter="on", extra=["--limit", "20"])
+        demoted_by_src = {}
+        for r in data.get("results", []):
+            if r.get("_state_adj", {}).get("exhausted_penalty"):
+                for s in r.get("_sources", []):
+                    demoted_by_src.setdefault(s, 0)
+                    demoted_by_src[s] += 1
+        # We need at least the lex-source demotion (ssrf-hunter)
+        self.check(
+            "multi-source: at least one lex row demoted",
+            demoted_by_src.get("lex", 0) >= 1,
+            detail=f"demoted-by-src: {demoted_by_src}",
+        )
+        # A target row (EXHAUSTED.md/LOG.md) with ssrf vocabulary in
+        # title/description gets demoted via CLASS_KEYWORDS inference.
+        self.check(
+            "multi-source: at least one non-lex row demoted (inference via title/desc)",
+            sum(v for k, v in demoted_by_src.items() if k != "lex") >= 1,
+            detail=f"demoted-by-src: {demoted_by_src}",
+        )
+
+    # ─── test 13: hunter-agent contract — engagement hints still in `results` ─
+    def test_hunter_agent_still_sees_engagement_hints(self):
+        """The 19 specialist hunter agents call intelligence-recall.sh and consume
+        data['results']. This test simulates that: after the refactor, target-source
+        rows (paths under .engagement/) MUST still appear in results[]."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        sh("bash", str(STATE_SH), "observe", self.target,
+           "webhook accepts SSRF-shaped url= parameter")
+        data = self._recall("SSRF url parameter webhook", target=self.target,
+                           sources="lex,writeups,target")
+        rows = data.get("results", [])
+        engagement_rows = [
+            r for r in rows
+            if isinstance(r.get("path"), str)
+            and (".engagement/" in r["path"] or r.get("_src") == "target")
+        ]
+        self.check(
+            "hunter-contract: engagement-state files still surface in results[]",
+            len(engagement_rows) >= 1,
+            detail=f"total={len(rows)} engagement-rows={len(engagement_rows)}",
+        )
+
     def run_all(self):
         print("── engagement-state adversarial tests ──")
         self.setup()
@@ -208,6 +454,15 @@ class Test:
             self.test_exhausted_not_dominant()
             self.test_no_epistemic_upgrade()
             self.test_input_validation()
+            # ─── state-as-filter refactor tests (2026-09-04) ───
+            self.test_exhausted_demotes_rank()
+            self.test_state_filter_idempotent()
+            self.test_state_adj_always_present()
+            self.test_exhausted_class_case_normalization()
+            self.test_exhausted_parser_handles_em_dash_in_why()
+            self.test_recall_on_empty_exhausted_md()
+            self.test_class_penalty_fires_on_all_source_kinds()
+            self.test_hunter_agent_still_sees_engagement_hints()
         finally:
             self.teardown()
 

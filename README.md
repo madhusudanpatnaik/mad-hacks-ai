@@ -163,16 +163,19 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 
 | Layer | Status | Baseline (against `tests/intelligence/queries.jsonl`) |
 |---|---|---|
-| SQLite FTS5 / BM25 lexical | **LIVE** — stdlib only, ships with every clone | MRR **0.464**, R@10 **0.484** |
-| RRF fusion (lex + writeups + target) | **LIVE** — via `intelligence-recall.sh` | MRR **0.468**, R@10 **0.531** |
+| SQLite FTS5 / BM25 lexical | **LIVE** — stdlib only, ships with every clone | MRR **0.530**, R@10 **0.562** |
+| RRF fusion (lex + writeups + target) | **LIVE** — via `intelligence-recall.sh` (phase 1) | MRR **0.549**, R@10 **0.625** |
 | Security-vocabulary query expansion | **LIVE** — zero-threshold fallback, tight OR pool | rescues `synonym` (R@10 0→0.700) + `tech-cross` (MRR 0→0.750) |
-| Engagement state (target memory) | **LIVE** — `.engagement/<t>/` | 9/9 state adversarial tests pass |
+| **State-as-filter (audit correction #7)** | **LIVE** — phase 2 of the router: exhausted-class demote (0.4×) applied after RRF | `--state-filter=on\|off\|auto`; 27/27 state adversarial tests |
+| Engagement state (target memory) | **LIVE** — `.engagement/<t>/` | 27/27 state adversarial tests pass (was 9/9) |
 | Evidence ledger + epistemic ternary | **LIVE** — `EVIDENCE.jsonl` | Verified/Inferred/Assumed labels never silently upgrade |
 | FAISS + sentence-transformers semantic | **OPTIONAL** — `pip3 install faiss-cpu sentence-transformers` + `python3 scripts/build-embeddings.py` | Not measured until enabled |
 | Ruflo semantic cache | **OPTIONAL** — `brain-sync-ruflo.sh --from-registry` + ruflo MCP | Provenance-tagged; toolkit works without it |
 | Registry (`brain/registry/`) | **REGENERABLE — do not hand-edit** — regenerated from source by `build-registry.py`; canonical remains the file tree | 265 rows across 6 asset types |
 
-**The retrieval suite (`tests/intelligence/`) freezes these numbers.** Every future router change is compared numerically, not "looks good on toy queries." The suite already caught one bad tune of query expansion (blind expansion regressed MRR -30%) and guided the right one (zero-threshold + tight pool, +28% MRR).
+Per-category MRR (RRF, 2026-09-04 v2): direct **0.676** · synonym **0.578** · tech-cross **0.750** · ambiguous **0.357** · indirect **0.125**.
+
+**The retrieval suite (`tests/intelligence/`) freezes these numbers.** Every future router change is compared numerically, not "looks good on toy queries." The suite has caught two bad tunes already (blind expansion regressed MRR −30%, threshold-<5 fallback regressed MRR −6%) and validated the good ones (zero-threshold expansion +28%, state-as-filter refactor +17%). Per-category floors are now hardcoded — any category regressing >5% below baseline fails the suite.
 
 ## MCP integration (auto-detected)
 

@@ -66,9 +66,18 @@ case "$CMD" in
     CLASS="${1:-}"; FILE="${2:-}"; [ -n "$CLASS" ] && [ -f "$FILE" ] || { echo "usage: brain.sh payload <class> <file>"; exit 2; }
     OUT="$BRAIN/payloads/$(slug "$CLASS").txt"; touch "$OUT"
     before=$(wc -l < "$OUT" | tr -d ' ')
-    cat "$OUT" "$FILE" | awk 'NF && !seen[$0]++' > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"
+    # Preserve symlinks: some payload files symlink into wordlists/ so writes
+    # reach the canonical location. `mv tmp $OUT` would replace the symlink
+    # with a regular file, silently breaking the wordlists/ → brain/payloads/
+    # design. Compute deduped content into tmp, then WRITE THROUGH the symlink
+    # via redirect (cat > "$OUT") instead of replacing the inode.
+    TMP=$(mktemp)
+    cat "$OUT" "$FILE" | awk 'NF && !seen[$0]++' > "$TMP"
+    cat "$TMP" > "$OUT"
+    rm -f "$TMP"
     after=$(wc -l < "$OUT" | tr -d ' ')
-    echo "✅ payloads[$CLASS]: $before → $after ( +$((after-before)) new ) → $OUT"
+    if [ -L "$OUT" ]; then LINK_NOTE=" (symlink → $(readlink "$OUT"))"; else LINK_NOTE=""; fi
+    echo "✅ payloads[$CLASS]: $before → $after ( +$((after-before)) new ) → $OUT$LINK_NOTE"
     ;;
   search)
     QUERY="${1:-}"; [ -n "$QUERY" ] || { echo "usage: brain.sh search <query>"; exit 2; }

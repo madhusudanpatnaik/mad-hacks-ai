@@ -348,3 +348,39 @@ api/.env
 /wp-json/redirection/v1/log
 /wp-json/wp-security/v1/get-logs
 /wp-json/wp-security/v1/get-firewall-logs
+# ─── high-signal /api/v1 base endpoints (from ranking-most-common list) ───
+/api/v1/users
+/api/v1/users/1
+/api/v1/users/me
+/api/v1/oauth/token
+/api/v1/oauth/authorize
+/api/v1/forgot-password
+/api/v1/reset-password
+/api/v1/password-reset
+/api/v1/debug
+/api/v1/debug/env
+/api/v1/debug/vars
+/api/v1/debug/pprof
+# same for v2 (rotate versions — often behind different auth)
+/api/v2/users
+/api/v2/users/me
+/api/v2/oauth/token
+/api/v2/forgot-password
+/api/v2/debug
+# hidden internal surfaces from Spring Actuator / Java admin dumps
+/getSchema
+/actuator
+/actuator/env
+/actuator/heapdump
+/actuator/beans
+/actuator/mappings
+/actuator/threaddump
+/actuator/prometheus
+/env
+/env.js
+/config
+/config.json
+/health
+/info
+/metrics
+/prometheus

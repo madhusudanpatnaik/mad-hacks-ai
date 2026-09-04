@@ -166,8 +166,8 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 | SQLite FTS5 / BM25 lexical | **LIVE** — stdlib only, ships with every clone | MRR **0.530**, R@10 **0.562** |
 | RRF fusion (lex + writeups + target) | **LIVE** — via `intelligence-recall.sh` (phase 1) | MRR **0.549**, R@10 **0.625** |
 | Security-vocabulary query expansion | **LIVE** — zero-threshold fallback, tight OR pool | rescues `synonym` (R@10 0→0.700) + `tech-cross` (MRR 0→0.750) |
-| **State-as-filter (audit correction #7)** | **LIVE** — phase 2 of the router: exhausted-class demote (0.4×) applied after RRF | `--state-filter=on\|off\|auto`; 27/27 state adversarial tests |
-| Engagement state (target memory) | **LIVE** — `.engagement/<t>/` | 27/27 state adversarial tests pass (was 9/9) |
+| **State-as-filter (audit correction #7)** | **LIVE** — phase 2 of the router: exhausted-class demote (0.4×) + hypothesis-alignment boost (+0.15 × median × signal) applied after RRF | `--state-filter=on\|off\|auto`; 37/37 state adversarial tests |
+| Engagement state (target memory) | **LIVE** — `.engagement/<t>/` (OBSERVED / TESTED / EXHAUSTED / HYPOTHESES / EVIDENCE) | 37/37 state adversarial tests pass (was 9/9) |
 | Evidence ledger + epistemic ternary | **LIVE** — `EVIDENCE.jsonl` | Verified/Inferred/Assumed labels never silently upgrade |
 | FAISS + sentence-transformers semantic | **OPTIONAL** — `pip3 install faiss-cpu sentence-transformers` + `python3 scripts/build-embeddings.py` | Not measured until enabled |
 | Ruflo semantic cache | **OPTIONAL** — `brain-sync-ruflo.sh --from-registry` + ruflo MCP | Provenance-tagged; toolkit works without it |

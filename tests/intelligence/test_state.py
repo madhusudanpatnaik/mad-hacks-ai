@@ -445,6 +445,144 @@ class Test:
             detail=f"total={len(rows)} engagement-rows={len(engagement_rows)}",
         )
 
+    # ═══════════════════════════════════════════════════════════════════
+    # HYPOTHESIS-BOOST TESTS (state-as-filter phase 2b, own commit)
+    # Additive boost to _final_score for rows whose text overlaps active
+    # hypothesis tokens. Class tokens weight 1.0 (rare, high-signal); generic
+    # tokens weight 0.2 (need many to matter); cap at 4.0 (prevent bingo).
+    # ═══════════════════════════════════════════════════════════════════
+
+    # ─── test 14: hypothesis-aligned row promotes ──────────
+    def test_hypothesis_boost_promotes(self):
+        """Adding a hypothesis with rare tokens must lift a matching row's
+        rank compared to the without-hypothesis baseline."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        # baseline recall (no hypothesis yet, but engaged=True → filter runs w/ no boost)
+        query = "SSRF metadata bypass"
+        baseline = self._recall(query, target=self.target, state_filter="on")
+        base_scores = [(r.get("title","")[:40], r.get("_final_score",0))
+                       for r in baseline.get("results", [])]
+
+        # now add a hypothesis that matches vocabulary in the SSRF-hunter agent
+        sh("bash", str(STATE_SH), "hypothesis", self.target, "add",
+           "SSRF via url parameter bypasses metadata IMDSv2",
+           "--priority", "high")
+        boosted = self._recall(query, target=self.target, state_filter="on")
+
+        # Find a row that gained a boost — proves the mechanism fired
+        boosted_rows = [r for r in boosted.get("results", [])
+                        if r.get("_state_adj", {}).get("hypothesis_boost", 0) > 0]
+        self.check(
+            "hypothesis-boost: at least one row received a positive boost",
+            len(boosted_rows) >= 1,
+            detail=f"boosted-count: {len(boosted_rows)} / {len(boosted.get('results', []))}",
+        )
+        if not boosted_rows:
+            return
+
+        # Compare: any boosted row's _final_score should exceed its _rrf_score
+        one = boosted_rows[0]
+        self.check(
+            "hypothesis-boost: _final_score > _rrf_score on boosted row",
+            one.get("_final_score", 0) > one.get("_rrf_score", 0),
+            detail=f"rrf={one.get('_rrf_score')} final={one.get('_final_score')}",
+        )
+        # Tokens matched must be present in _state_adj
+        self.check(
+            "hypothesis-boost: hypothesis_tokens_matched populated",
+            isinstance(one.get("_state_adj", {}).get("hypothesis_tokens_matched"), list)
+            and len(one["_state_adj"]["hypothesis_tokens_matched"]) >= 1,
+        )
+        # The class token 'ssrf' should be among the matched tokens somewhere
+        matched_any_class_token = any(
+            "ssrf" in (r.get("_state_adj", {}).get("hypothesis_tokens_matched") or [])
+            for r in boosted_rows
+        )
+        self.check(
+            "hypothesis-boost: class-vocabulary token ('ssrf') detected on at least one boosted row",
+            matched_any_class_token,
+        )
+
+    # ─── test 15: case-insensitive overlap ──────────────────
+    def test_hypothesis_boost_case_insensitive(self):
+        """Row titles/descriptions and hypothesis text are lowercased on both
+        sides before intersection. Regressing this reverts to the case-blind
+        no-op the prior critique flagged as a blocker."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        # write a mixed-case hypothesis whose distinctive token would fail a
+        # case-sensitive comparison against the ssrf-hunter row's lowercase title
+        sh("bash", str(STATE_SH), "hypothesis", self.target, "add",
+           "SSRF hunter dispatch on Webhook Parameter", "--priority", "high")
+        data = self._recall("SSRF", target=self.target, state_filter="on",
+                           extra=["--limit", "20"])
+        # look for the ssrf-hunter row (its title is lowercase 'ssrf-hunter')
+        hunter = next((r for r in data.get("results", [])
+                       if r.get("title","").lower() == "ssrf-hunter"), None)
+        self.check(
+            "case-insensitive: ssrf-hunter row present in results",
+            hunter is not None,
+        )
+        if hunter:
+            self.check(
+                "case-insensitive: ssrf-hunter row received hypothesis boost despite mixed-case hypothesis",
+                hunter.get("_state_adj", {}).get("hypothesis_boost", 0) > 0,
+                detail=str(hunter.get("_state_adj")),
+            )
+
+    # ─── test 16: active hypothesis count visible ───────────
+    def test_hypothesis_active_count_visible(self):
+        """The state block reports hypotheses_active count. Adding a
+        hypothesis should increment it observably — this is the growth
+        sensor for engagements that let HYPOTHESES.md accumulate."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        d0 = self._recall("test", target=self.target, state_filter="on")
+        n0 = d0.get("state", {}).get("hypotheses_active", -1)
+        sh("bash", str(STATE_SH), "hypothesis", self.target, "add",
+           "first probe hypothesis", "--priority", "low")
+        sh("bash", str(STATE_SH), "hypothesis", self.target, "add",
+           "second probe hypothesis", "--priority", "medium")
+        d2 = self._recall("test", target=self.target, state_filter="on")
+        n2 = d2.get("state", {}).get("hypotheses_active", -1)
+        self.check(
+            "hypotheses_active: starts at 0 after init",
+            n0 == 0,
+            detail=f"got {n0}",
+        )
+        self.check(
+            "hypotheses_active: increments to 2 after two adds",
+            n2 == 2,
+            detail=f"got {n2}",
+        )
+        # boost side-effect: with hypotheses present, at least one row should
+        # carry hypothesis_active_count in its _state_adj (informational field)
+        with_active_count = [
+            r for r in d2.get("results", [])
+            if r.get("_state_adj", {}).get("hypothesis_active_count") == 2
+        ]
+        self.check(
+            "hypotheses_active: _state_adj carries hypothesis_active_count on affected rows",
+            len(with_active_count) >= 1,
+            detail=f"rows-with-count: {len(with_active_count)}",
+        )
+
+    # ─── test 17: no boost when no hypothesis exists ────────
+    def test_hypothesis_boost_absent_without_hypotheses(self):
+        """Without any active hypothesis (empty HYPOTHESES.md), no row must
+        carry hypothesis_boost or hypothesis_tokens_matched. The absence
+        contract keeps the mechanism opt-in — protects test_retrieval floors."""
+        shutil.rmtree(self.state_dir); sh("bash", str(STATE_SH), "init", self.target, "--tech", "t")
+        data = self._recall("XSS reflected", target=self.target, state_filter="on")
+        offenders = [
+            r for r in data.get("results", [])
+            if r.get("_state_adj", {}).get("hypothesis_boost")
+            or r.get("_state_adj", {}).get("hypothesis_tokens_matched")
+        ]
+        self.check(
+            "hypothesis-absent: no row carries hypothesis_boost/tokens when HYPOTHESES.md is empty",
+            len(offenders) == 0 and len(data.get("results", [])) > 0,
+            detail=f"offenders: {len(offenders)}, total: {len(data.get('results', []))}",
+        )
+
     def run_all(self):
         print("── engagement-state adversarial tests ──")
         self.setup()
@@ -463,6 +601,11 @@ class Test:
             self.test_recall_on_empty_exhausted_md()
             self.test_class_penalty_fires_on_all_source_kinds()
             self.test_hunter_agent_still_sees_engagement_hints()
+            # ─── hypothesis-boost tests (b890e94 → this commit) ───
+            self.test_hypothesis_boost_promotes()
+            self.test_hypothesis_boost_case_insensitive()
+            self.test_hypothesis_active_count_visible()
+            self.test_hypothesis_boost_absent_without_hypotheses()
         finally:
             self.teardown()
 

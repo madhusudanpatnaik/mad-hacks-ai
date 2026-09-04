@@ -415,9 +415,19 @@ def collect_all():
     return rows, counts
 
 # ─── write + query ──────────────────────────────────────────
+REGISTRY_HEADER_WARNING = {
+    "_meta": "REGENERABLE — do not hand-edit. This file is rebuilt from source "
+             "(references/, scripts/, tools/, brain/, agents/) by scripts/build-registry.py. "
+             "Manual edits will be LOST on the next rebuild. Add knowledge to the source "
+             "files above; regenerate with `brain.sh registry --rebuild`.",
+    "_generated_by": "scripts/build-registry.py",
+}
+
 def write_registry(rows):
     REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     with REGISTRY_FILE.open("w") as f:
+        # Line 1 is a marker/warning that machine-parsers should skip.
+        f.write(json.dumps(REGISTRY_HEADER_WARNING, separators=(",", ":")) + "\n")
         for row in rows:
             f.write(json.dumps(row, separators=(",", ":")) + "\n")
 
@@ -493,7 +503,17 @@ def fts_search(query, limit=15, type_filter=None):
 def load_registry():
     if not REGISTRY_FILE.exists():
         return []
-    return [json.loads(l) for l in REGISTRY_FILE.read_text().splitlines() if l.strip()]
+    rows = []
+    for l in REGISTRY_FILE.read_text().splitlines():
+        if not l.strip(): continue
+        try:
+            r = json.loads(l)
+            # Skip the header/marker row
+            if r.get("_meta") and "_generated_by" in r: continue
+            rows.append(r)
+        except json.JSONDecodeError:
+            continue
+    return rows
 
 def search_registry(rows, query, limit=15):
     """Lexical search across title + description + capabilities + classes + technologies."""

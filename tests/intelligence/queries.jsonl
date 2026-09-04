@@ -1,0 +1,64 @@
+{"id":"Q001","query":"XSS reflected filter bypass","expected_classes":["xss"],"expected_types":["reference","payload","agent"],"category":"direct","notes":"Direct — should surface xss-hunter, hunt-xss.md, xss-by-context.md"}
+{"id":"Q002","query":"SSRF cloud metadata IMDSv2","expected_classes":["ssrf","cloud"],"expected_types":["reference","tool","payload"],"category":"direct","notes":"SSRF direct with cloud-metadata cross-class"}
+{"id":"Q003","query":"IDOR authorization","expected_classes":["idor"],"expected_types":["agent","reference"],"category":"direct"}
+{"id":"Q004","query":"SQL injection WAF bypass","expected_classes":["sqli","waf-bypass"],"expected_types":["agent","payload","writeup"],"category":"direct"}
+{"id":"Q005","query":"SSTI Jinja2 sandbox escape","expected_classes":["ssti","rce"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q006","query":"deserialization RCE Java","expected_classes":["rce","deserialization"],"expected_types":["payload","agent"],"category":"direct"}
+{"id":"Q007","query":"CSRF SameSite bypass","expected_classes":["csrf"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q008","query":"CORS null origin credentials","expected_classes":["cors"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q009","query":"prototype pollution merge","expected_classes":["prototype-pollution"],"expected_types":["payload","lesson"],"category":"direct"}
+{"id":"Q010","query":"XXE blind OOB SVG","expected_classes":["xxe"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q011","query":"open redirect OAuth","expected_classes":["open-redirect","oauth"],"expected_types":["agent","reference"],"category":"direct"}
+{"id":"Q012","query":"subdomain takeover CNAME","expected_classes":["subdomain-takeover"],"expected_types":["agent"],"category":"direct"}
+{"id":"Q013","query":"CRLF injection header","expected_classes":["crlf"],"expected_types":["payload","writeup"],"category":"direct"}
+{"id":"Q014","query":"cache deception static extension","expected_classes":["cache-deception"],"expected_types":["reference","payload","writeup"],"category":"direct"}
+{"id":"Q015","query":"HTTP request smuggling H2 desync","expected_classes":["http-smuggling"],"expected_types":["lesson","writeup"],"category":"direct"}
+{"id":"Q016","query":"race condition parallel request","expected_classes":["race"],"expected_types":["agent"],"category":"direct"}
+{"id":"Q017","query":"mass assignment JSON admin","expected_classes":["mass-assignment","idor"],"expected_types":["payload","reference"],"category":"direct"}
+{"id":"Q018","query":"GraphQL introspection batching","expected_classes":["graphql"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q019","query":"file upload polyglot SVG","expected_classes":["file-upload"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q020","query":"JWT algorithm confusion","expected_classes":["oauth","auth-session"],"expected_types":["tool","agent"],"category":"direct","notes":"JWT knowledge lives across oauth-hunter, jwt_scanner tool, hunt-session lessons"}
+{"id":"Q021","query":"nuclei template writing","expected_classes":["recon","workflow"],"expected_types":["lesson"],"category":"direct"}
+{"id":"Q022","query":"prompt injection LLM","expected_classes":["llm-ai"],"expected_types":["agent","tool","lesson"],"category":"direct"}
+{"id":"Q023","query":"wordpress plugin RCE","expected_classes":["wordpress","rce"],"expected_types":["reference"],"category":"direct"}
+{"id":"Q024","query":"Active Directory Kerberoasting","expected_classes":["active-directory"],"expected_types":["lesson","reference"],"category":"direct","notes":"Rifteo ad-breach catalog + lesson"}
+{"id":"Q025","query":"Android APK static analysis","expected_classes":["android","mobile"],"expected_types":["lesson","script"],"category":"direct"}
+{"id":"Q026","query":"clickjacking UI redressing","expected_classes":["clickjacking"],"expected_types":["lesson"],"category":"direct"}
+{"id":"Q027","query":"HTTP parameter pollution","expected_classes":["hpp"],"expected_types":["lesson"],"category":"direct"}
+{"id":"Q028","query":"SAML XSW assertion replay","expected_classes":["saml"],"expected_types":["payload"],"category":"direct"}
+{"id":"Q029","query":"info disclosure .git .env","expected_classes":["info-disclosure"],"expected_types":["agent","payload"],"category":"direct"}
+{"id":"Q030","query":"subfinder wayback recon workflow","expected_classes":["recon"],"expected_types":["reference","lesson"],"category":"direct"}
+{"id":"Q031","query":"BOLA","expected_classes":["idor"],"category":"synonym","notes":"BOLA should retrieve IDOR/authorization content"}
+{"id":"Q032","query":"broken object level authorization","expected_classes":["idor"],"category":"synonym"}
+{"id":"Q033","query":"server-side request forgery","expected_classes":["ssrf"],"category":"synonym"}
+{"id":"Q034","query":"cross-site scripting","expected_classes":["xss"],"category":"synonym"}
+{"id":"Q035","query":"session fixation","expected_classes":["auth-session"],"category":"synonym"}
+{"id":"Q036","query":"authorization bypass","expected_classes":["idor","auth-session"],"category":"synonym"}
+{"id":"Q037","query":"account takeover","expected_classes":["auth-session","oauth"],"category":"synonym"}
+{"id":"Q038","query":"URL redirect vulnerability","expected_classes":["open-redirect"],"category":"synonym"}
+{"id":"Q039","query":"privilege escalation","expected_classes":["idor","rce"],"category":"synonym"}
+{"id":"Q040","query":"unauthenticated remote code execution","expected_classes":["rce"],"category":"synonym"}
+{"id":"Q041","query":"backend makes a request based on user-supplied URL","expected_classes":["ssrf"],"category":"indirect","notes":"No SSRF keyword — should still surface SSRF via semantic (or by 'request' + 'user URL' lex matches)"}
+{"id":"Q042","query":"template renders user input as code","expected_classes":["ssti"],"category":"indirect"}
+{"id":"Q043","query":"user can read another user's data","expected_classes":["idor"],"category":"indirect"}
+{"id":"Q044","query":"attacker controls the query passed to the DB","expected_classes":["sqli"],"category":"indirect"}
+{"id":"Q045","query":"script tag reflected in HTML page","expected_classes":["xss"],"category":"indirect"}
+{"id":"Q046","query":"URL parameter used unchanged in Location header","expected_classes":["open-redirect","crlf"],"category":"indirect"}
+{"id":"Q047","query":"cookie ignores logout","expected_classes":["auth-session"],"category":"indirect"}
+{"id":"Q048","query":"resolver returns object regardless of caller","expected_classes":["graphql","idor"],"category":"indirect"}
+{"id":"Q049","query":"static file suffix bypasses auth","expected_classes":["cache-deception"],"category":"indirect"}
+{"id":"Q050","query":"file upload with double extension","expected_classes":["file-upload"],"category":"indirect"}
+{"id":"Q051","query":"token confusion","expected_classes":["oauth","auth-session"],"category":"ambiguous","notes":"Could be JWT alg confusion or OAuth state token — expect either"}
+{"id":"Q052","query":"session hijack","expected_classes":["xss","auth-session"],"category":"ambiguous"}
+{"id":"Q053","query":"input validation bypass","expected_classes":["xss","sqli","rce"],"category":"ambiguous","notes":"Class-agnostic — expect any of the injection classes"}
+{"id":"Q054","query":"header injection","expected_classes":["crlf","host-header"],"category":"ambiguous"}
+{"id":"Q055","query":"URL manipulation","expected_classes":["open-redirect","ssrf"],"category":"ambiguous"}
+{"id":"Q056","query":"authentication weakness","expected_classes":["auth-session","oauth","mfa"],"category":"ambiguous"}
+{"id":"Q057","query":"AWS Fargate Postgres GraphQL app","expected_classes":["cloud","graphql"],"expected_technologies":["aws","graphql"],"category":"tech-cross","notes":"Cross-domain — technology-tagged"}
+{"id":"Q058","query":"Next.js App Router Vercel Edge","expected_classes":["rce","xss"],"expected_technologies":["nextjs"],"category":"tech-cross","notes":"React2Shell CVE + Next.js-specific patterns"}
+{"id":"Q059","query":"Kubernetes API server unauth","expected_classes":["cloud"],"expected_technologies":["kubernetes"],"category":"tech-cross"}
+{"id":"Q060","query":"WordPress admin-ajax XSS","expected_classes":["xss","wordpress"],"expected_technologies":["wordpress"],"category":"tech-cross"}
+{"id":"Q061","query":"testssl heartbleed cert","expected_classes":["tls"],"category":"direct"}
+{"id":"Q062","query":"pastejacking clipboard blind XSS","expected_classes":["xss"],"expected_types":["writeup","reference"],"category":"direct"}
+{"id":"Q063","query":"OAuth PKCE downgrade","expected_classes":["oauth"],"category":"direct"}
+{"id":"Q064","query":"punycode homograph account takeover","expected_classes":["punycode","auth-session"],"category":"direct"}

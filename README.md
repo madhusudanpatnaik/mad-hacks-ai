@@ -159,6 +159,21 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 
 ---
 
+## Retrieval status — LIVE vs OPTIONAL (honest labels)
+
+| Layer | Status | Baseline (against `tests/intelligence/queries.jsonl`) |
+|---|---|---|
+| SQLite FTS5 / BM25 lexical | **LIVE** — stdlib only, ships with every clone | MRR **0.464**, R@10 **0.484** |
+| RRF fusion (lex + writeups + target) | **LIVE** — via `intelligence-recall.sh` | MRR **0.468**, R@10 **0.531** |
+| Security-vocabulary query expansion | **LIVE** — zero-threshold fallback, tight OR pool | rescues `synonym` (R@10 0→0.700) + `tech-cross` (MRR 0→0.750) |
+| Engagement state (target memory) | **LIVE** — `.engagement/<t>/` | 9/9 state adversarial tests pass |
+| Evidence ledger + epistemic ternary | **LIVE** — `EVIDENCE.jsonl` | Verified/Inferred/Assumed labels never silently upgrade |
+| FAISS + sentence-transformers semantic | **OPTIONAL** — `pip3 install faiss-cpu sentence-transformers` + `python3 scripts/build-embeddings.py` | Not measured until enabled |
+| Ruflo semantic cache | **OPTIONAL** — `brain-sync-ruflo.sh --from-registry` + ruflo MCP | Provenance-tagged; toolkit works without it |
+| Registry (`brain/registry/`) | **REGENERABLE — do not hand-edit** — regenerated from source by `build-registry.py`; canonical remains the file tree | 265 rows across 6 asset types |
+
+**The retrieval suite (`tests/intelligence/`) freezes these numbers.** Every future router change is compared numerically, not "looks good on toy queries." The suite already caught one bad tune of query expansion (blind expansion regressed MRR -30%) and guided the right one (zero-threshold + tight pool, +28% MRR).
+
 ## MCP integration (auto-detected)
 
 - **Burp Suite MCP** — every specialist hunter runs `ToolSearch("burp proxy repeater intruder collaborator")` at dispatch; if present, Repeater = primary probe channel + Collaborator = primary OOB backend. Register: `claude mcp add burp ...` (recipe: [`references/burp-integration.md`](references/burp-integration.md)).

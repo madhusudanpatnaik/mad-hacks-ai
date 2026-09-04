@@ -53,5 +53,6 @@ echo " reverse/mobile:" ; for t in file strings binwalk checksec r2 objdump apkt
 echo
 echo "[NOTE] DO NOT execute here regardless of install: msfconsole, pacu, frida, hydra, bloodhound collectors."
 echo "==========================================================="
-echo "Next: read ~/.claude/skills/mad-hacks/references/operators.md, then run recon.sh once authorized."
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+echo "Next: read $REPO_ROOT/references/operators.md, then run scripts/recon.sh once authorized."
 [ "${AUTHZ_BLOCKED:-0}" = "1" ] && exit 1 || exit 0

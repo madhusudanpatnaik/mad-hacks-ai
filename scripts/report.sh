@@ -2,7 +2,12 @@
 # T3MP3ST report — scaffold a finding, or assemble findings into a report.
 # Usage:
 #   report.sh finding <target> <slug>       → new findings/F-NNN-<slug>.md from template
-#   report.sh build <target>                → assemble findings/*.md + evidence index → report.md
+#   report.sh import-evidence <target>      → ingest .engagement/<target>/EVIDENCE.jsonl
+#                                              rows as findings/F-NNN-*.md stubs
+#                                              (bridges the .engagement→.t3mp3st gap
+#                                              per operator-integration audit #2)
+#   report.sh build <target>                → auto-imports evidence THEN assembles
+#                                              findings/*.md + evidence index → report.md
 #   report.sh build-html <target>           → report.md → report.html   (pandoc → cmark → md2html)
 #   report.sh build-docx <target>           → report.md → report.docx   (pandoc → python-docx fallback)
 #   report.sh build-pdf  <target>           → report.md → report.pdf    (pandoc → weasyprint → wkhtmltopdf)
@@ -10,9 +15,103 @@
 # Keyless: uses whichever converter is present; reports gracefully if none.
 set -euo pipefail
 CMD="${1:-}"; TARGET="${2:-}"; SLUG="${3:-}"
-[ -n "$TARGET" ] || { echo "usage: report.sh {finding <target> <slug> | build <target> | build-html <target> | build-docx <target> | build-pdf <target> | build-all <target>}"; exit 2; }
+[ -n "$TARGET" ] || { echo "usage: report.sh {finding <target> <slug> | import-evidence <target> | build <target> | build-html <target> | build-docx <target> | build-pdf <target> | build-all <target>}"; exit 2; }
 BASE="./.t3mp3st/${TARGET}"; FIND="$BASE/findings"; EV="$BASE/evidence"
 mkdir -p "$FIND" "$EV"
+
+# ─── engagement-state slug helper (matches engagement-state.sh slug()) ───
+_engagement_slug() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9.-' '-' | sed 's/^-//; s/-$//'; }
+
+# ─── auto-import EVIDENCE.jsonl → F-NNN stubs (bridges the storage split) ─
+# .engagement/<slug>/EVIDENCE.jsonl is written by engagement-state.sh evidence add
+# during hunter dispatch. Without this bridge, `report.sh build` NEVER sees those
+# rows because it only reads .t3mp3st/<target>/findings/. Bridge: turn each
+# CONFIRMED-shaped evidence row (has observation + evidence + interpretation
+# and epistemic in {OBSERVED, DERIVED}) into an F-NNN stub, tagged with source.
+# Idempotent: skips rows already imported (fingerprints ts+observation-hash).
+_import_evidence_rows() {
+  local target="$1"
+  local slug; slug=$(_engagement_slug "$target")
+  local evi_file=""
+  # Support all three storage roots the router already understands
+  for root in ".engagement" ".cdc" ".t3mp3st"; do
+    if [ -f "./$root/$slug/EVIDENCE.jsonl" ]; then evi_file="./$root/$slug/EVIDENCE.jsonl"; break; fi
+  done
+  [ -n "$evi_file" ] && [ -s "$evi_file" ] || { echo "  (no EVIDENCE.jsonl found under .engagement/.cdc/.t3mp3st for $slug — nothing to import)"; return 0; }
+
+  local imported_marker="$FIND/.imported-from-evidence.log"
+  touch "$imported_marker"
+  local added=0
+  export FIND imported_marker
+  python3 - "$evi_file" <<'PYEOF'
+import hashlib, json, os, re, sys
+from pathlib import Path
+evi_file = Path(sys.argv[1])
+FIND     = Path(os.environ["FIND"])
+LOG      = Path(os.environ["imported_marker"])
+seen = set(LOG.read_text().splitlines()) if LOG.exists() else set()
+added = 0
+for line in evi_file.read_text().splitlines():
+    line = line.strip()
+    if not line: continue
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    ts    = row.get("ts", "")
+    obs   = row.get("observation", "")
+    eps   = row.get("epistemic_status", "")
+    fp    = hashlib.sha1((ts + "|" + obs[:200]).encode()).hexdigest()[:16]
+    if fp in seen: continue
+    # Only auto-import evidence-grade rows (OBSERVED / DERIVED); HYPOTHESIS
+    # and INFERRED are exploratory and should not appear in a report
+    # without operator review.
+    if eps not in ("OBSERVED", "DERIVED"): continue
+    # Assign next F-NNN
+    existing = sorted(FIND.glob("F-*.md"))
+    nxt = len(existing) + 1
+    slug_bit = re.sub(r"[^a-z0-9]+", "-", (obs[:40].lower())).strip("-") or "finding"
+    fname = FIND / f"F-{nxt:03d}-{slug_bit}.md"
+    body = f"""# F-{nxt:03d}: {obs[:80] or 'Imported from EVIDENCE.jsonl'}
+
+- **Severity:**   review-required
+- **CVSS:**       (assign after operator review)
+- **CWE:**        (assign after operator review)
+- **Confidence:** {'confirmed' if eps == 'OBSERVED' else 'probable'}  ({eps} / {row.get('confidence', '?')})
+- **Affected:**   {row.get('affected', '(specify)')}
+- **Source:**     auto-imported from {evi_file.name} (ts={ts})
+
+## Summary
+{obs}
+
+## Evidence
+- {row.get('evidence', '(evidence path/artifact)')}
+
+## Interpretation
+{row.get('interpretation', '')}
+
+## Hypothesis / next test
+{row.get('hypothesis', '')}
+
+## Test performed
+{row.get('test', '')}
+
+## Result
+{row.get('result', '')}
+
+## Conclusion
+{row.get('conclusion', '')}
+
+## Uncertainty
+Auto-imported stub — operator MUST review, assign severity/CVSS/CWE, verify affected asset, and confirm impact before shipping to a bounty program or client.
+"""
+    fname.write_text(body)
+    with open(LOG, "a") as f:
+        f.write(fp + "\n")
+    added += 1
+print(f"  imported {added} evidence row(s) → {FIND}")
+PYEOF
+}
 
 case "$CMD" in
   finding)
@@ -57,7 +156,14 @@ EOF
     echo "✅ $F"
     echo "   Remember the gates: VERIFY (proof in real captured output) then REFUTE (try to disprove) before marking confirmed."
     ;;
+  import-evidence)
+    _import_evidence_rows "$TARGET"
+    echo "   Review the generated F-*.md files, then run: report.sh build $TARGET"
+    ;;
   build)
+    # Auto-import EVIDENCE.jsonl before assembly — closes the storage split
+    # (audit disconnect #2). Idempotent: already-imported rows are skipped.
+    _import_evidence_rows "$TARGET"
     R="$BASE/report.md"
     {
       echo "# Security Assessment — ${TARGET}"

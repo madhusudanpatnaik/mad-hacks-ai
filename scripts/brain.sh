@@ -7,6 +7,9 @@
 # Usage:
 #   brain.sh recall <target>              → everything known about a target + relevant lessons
 #   brain.sh recall-class <class>         → class-relevant lessons (uses brain/lesson-index.md)
+#   brain.sh search <query>               → hybrid registry search across every asset
+#                                           (references + scripts + tools + payloads + lessons + agents)
+#   brain.sh registry [--stats|--rebuild] → view registry state or regenerate it
 #   brain.sh note <target> "<text>"       → timestamped observation on a target
 #   brain.sh finding <target> "<text>"    → record a CONFIRMED finding (verifier-passed)
 #   brain.sh exhausted <target> "<vector>"→ record a dead end (don't repeat it)
@@ -67,6 +70,37 @@ case "$CMD" in
     after=$(wc -l < "$OUT" | tr -d ' ')
     echo "✅ payloads[$CLASS]: $before → $after ( +$((after-before)) new ) → $OUT"
     ;;
+  search)
+    QUERY="${1:-}"; [ -n "$QUERY" ] || { echo "usage: brain.sh search <query>"; exit 2; }
+    REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+    REG="$REPO_ROOT/brain/registry/assets.jsonl"
+    if [ ! -f "$REG" ]; then
+      echo "(no registry yet — building it now...)"
+      python3 "$REPO_ROOT/scripts/build-registry.py" >/dev/null
+    fi
+    # Delegate the actual lexical search to build-registry.py (uses same code path)
+    python3 "$REPO_ROOT/scripts/build-registry.py" --search "$QUERY" 2>&1 | \
+      awk 'BEGIN{p=0} /^── search/{p=1} p'
+    ;;
+  registry)
+    REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+    SUB="${1:-show}"
+    case "$SUB" in
+      --stats|stats) python3 "$REPO_ROOT/scripts/build-registry.py" --stats ;;
+      --rebuild|rebuild) python3 "$REPO_ROOT/scripts/build-registry.py" ;;
+      show|"")
+        REG="$REPO_ROOT/brain/registry/assets.jsonl"
+        if [ -f "$REG" ]; then
+          echo "  registry: $REG"
+          echo "  rows:     $(wc -l < "$REG" | tr -d ' ')"
+          echo "  types:    $(python3 -c "import json,collections; c=collections.Counter(); [c.update([json.loads(l)['type']]) for l in open('$REG')]; print(dict(c))")"
+        else
+          echo "(registry not built yet — run: brain.sh registry --rebuild)"
+        fi
+        ;;
+      *) echo "usage: brain.sh registry [show|--stats|--rebuild]"; exit 2 ;;
+    esac
+    ;;
   recall-class)
     CLS="${1:-}"; [ -n "$CLS" ] || { echo "usage: brain.sh recall-class <class>"; exit 2; }
     LI="$BRAIN/lesson-index.md"
@@ -103,5 +137,5 @@ case "$CMD" in
     echo "payload classes: $(ls "$BRAIN/payloads"/*.txt 2>/dev/null | wc -l | tr -d ' ') ($(cat "$BRAIN/payloads"/*.txt 2>/dev/null | wc -l | tr -d ' ') probes)"
     echo "location:        $BRAIN"
     ;;
-  *) echo "usage: brain.sh {recall|recall-class|note|finding|exhausted|learn|tool|payload|stats} ..."; exit 2;;
+  *) echo "usage: brain.sh {recall|recall-class|search|registry|note|finding|exhausted|learn|tool|payload|stats} ..."; exit 2;;
 esac

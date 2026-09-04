@@ -242,6 +242,9 @@ def run_invariants(queries, reports):
                 failures.append(f"per-category floor: {cat} MRR={avg:.3f} < {floor:.3f}")
 
     # (2) state-absence invariant: without --target, every row has _state_adj={} and _final_score==_rrf_score
+    # AND no hypothesis_boost/exhausted_penalty leaked. Both mechanisms must
+    # stay opt-in — accidentally firing without --target would contaminate the
+    # MRR baseline (this test is the guardrail against that regression).
     sample_query = queries[0]["query"] if queries else "test"
     try:
         out = subprocess.check_output(
@@ -256,12 +259,15 @@ def run_invariants(queries, reports):
             round(r.get("_final_score", -1), 9) == round(r.get("_rrf_score", -2), 9)
             for r in rows
         )
+        # explicitly assert neither mechanism fired
+        no_penalty = all(not r.get("_state_adj", {}).get("exhausted_penalty") for r in rows)
+        no_boost   = all(not r.get("_state_adj", {}).get("hypothesis_boost")   for r in rows)
         # Also: state.engaged should be False when no --target
         state_off = data.get("state", {}).get("engaged") is False
-        ok = all_empty_adj and scores_match and state_off and len(rows) > 0
-        print(f"  [{ 'OK' if ok else 'FAIL' }] state-absence: _state_adj={{}} + _final_score=_rrf_score + state.engaged=false ({len(rows)} rows)")
+        ok = all_empty_adj and scores_match and no_penalty and no_boost and state_off and len(rows) > 0
+        print(f"  [{ 'OK' if ok else 'FAIL' }] state-absence: _state_adj={{}} + _final_score=_rrf_score + no penalty + no boost + engaged=false ({len(rows)} rows)")
         if not ok:
-            failures.append(f"state-absence: adj_empty={all_empty_adj} scores_match={scores_match} state_off={state_off}")
+            failures.append(f"state-absence: adj_empty={all_empty_adj} scores_match={scores_match} no_penalty={no_penalty} no_boost={no_boost} state_off={state_off}")
     except Exception as e:
         failures.append(f"state-absence: exception {e}")
 

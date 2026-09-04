@@ -33,6 +33,8 @@
 #   MADHACKS_RRF_K=60          — RRF constant (higher = less aggressive top-heavy)
 #   MADHACKS_LIMIT_PER_SOURCE  — how many raw hits per source before fusion (default 15)
 #   MADHACKS_EXHAUSTED_PENALTY — multiplier for exhausted-class rows (default 0.4)
+#   MADHACKS_HYPOTHESIS_BOOST  — coefficient for hypothesis-alignment (default 0.15)
+#   MADHACKS_HYPOTHESIS_CAP    — cap on effective overlap signal (default 4.0)
 
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -80,7 +82,13 @@ STATE_FILTER = os.environ.get("STATE_FILTER", "auto")
 
 K_RRF  = int(os.environ.get("MADHACKS_RRF_K", "60"))
 K_RAW  = int(os.environ.get("MADHACKS_LIMIT_PER_SOURCE", "15"))
-EXH_PENALTY = float(os.environ.get("MADHACKS_EXHAUSTED_PENALTY", "0.4"))
+EXH_PENALTY  = float(os.environ.get("MADHACKS_EXHAUSTED_PENALTY", "0.4"))
+HYP_COEFF    = float(os.environ.get("MADHACKS_HYPOTHESIS_BOOST",   "0.15"))
+HYP_CAP      = float(os.environ.get("MADHACKS_HYPOTHESIS_CAP",     "4.0"))
+# Class-keyword tokens are HIGH-signal (rare, discriminating) — single hit
+# counts as 1.0. Generic tokens are noise — need many to matter (0.2 each).
+HYP_CLASS_WEIGHT   = 1.0
+HYP_GENERIC_WEIGHT = 0.2
 
 FTS_DB      = REPO / "brain" / "registry" / "assets.db"
 FAISS_INDEX = REPO / "brain" / "registry" / "assets.faiss"
@@ -231,6 +239,73 @@ def load_exhausted_state(target):
             classes.add(cls)
             tuples.add((cls, vec, var))
     return {"classes": classes, "tuples": tuples, "path": f}
+
+# ─── tokenizer + HYPOTHESES.md loader (state-as-filter phase 2b) ─
+# The hypothesis-boost promotes rows whose text overlaps with any active
+# hypothesis. We use a length-3 minimum on tokens (drops "on", "via", "the")
+# and always lowercase both sides — the case-blind bug the correctness
+# critic flagged in the prior refactor would have made this a silent no-op.
+def tokenize_text(text):
+    """Return lowercase alphanumeric-and-hyphen tokens of len>=3.
+    Idempotent, no external state."""
+    if not text:
+        return set()
+    import re as _re
+    return {t for t in _re.findall(r"[A-Za-z0-9][A-Za-z0-9-]{2,}", str(text).lower())}
+
+# HYPOTHESES.md line format (engagement-state.sh line 174):
+#   - [ts] [PRIORITY] hypothesis text goes here
+# where PRIORITY is HIGH|MEDIUM|LOW. Header lines don't start with "- [".
+_HYP_LINE = None
+def _hyp_re():
+    global _HYP_LINE
+    if _HYP_LINE is None:
+        import re as _re
+        _HYP_LINE = _re.compile(
+            r"^- \[(?P<ts>[^\]]+)\] "
+            r"\[(?P<prio>[A-Za-z]+)\] "
+            r"(?P<text>.+)$"
+        )
+    return _HYP_LINE
+
+def load_hypotheses(target):
+    """Parse .engagement/<slug>/HYPOTHESES.md into:
+        {"active":  [ {ts, priority, text, tokens} ],
+         "path":    Path or None }
+    Empty structure on missing/empty file. Never raises.
+
+    'Active' scope for this commit: every listed hypothesis. A follow-up
+    commit will introduce `hypothesis resolve` and time-window filtering
+    (workflow critic during-implement #8). Until then, keep engagements
+    disciplined — resolve hypotheses by pruning HYPOTHESES.md manually if
+    the count grows unbounded (visible via _state_adj.hypothesis_active_count)."""
+    empty = {"active": [], "path": None}
+    if not target:
+        return empty
+    slug = target.lower().replace("/","-").replace(":","-")
+    for root_name in (".engagement", ".cdc", ".t3mp3st"):
+        f = REPO / root_name / slug / "HYPOTHESES.md"
+        if f.exists():
+            break
+    else:
+        return empty
+    try:
+        text = f.read_text(errors="ignore")
+    except Exception:
+        return empty
+    active = []
+    rx = _hyp_re()
+    for line in text.splitlines():
+        m = rx.match(line)
+        if not m: continue
+        htext = m.group("text").strip()
+        active.append({
+            "ts":       m.group("ts"),
+            "priority": m.group("prio").upper(),
+            "text":     htext,
+            "tokens":   tokenize_text(htext),
+        })
+    return {"active": active, "path": f}
 
 # ─── security-vocabulary query expansion ───────────────────
 # Maps a query token (lowercase) → set of synonyms/related terms to OR into
@@ -471,32 +546,104 @@ def rrf(source_hits, k=K_RRF):
 # as a stepping stone. Every row gets _final_score and _state_adj (empty when
 # no state applied) so consumers can rely on the schema unconditionally.
 #
-# Scope-cut per critique synthesis: this commit ships exhausted-demote ONLY.
-# Hypothesis-alignment and CONFIRMED-class boosts are deferred to separate
-# commits — each needs its own per-category MRR delta as justification.
-def apply_state_filter(fused_rows, exhausted, engaged):
+# Two mechanisms compose additively per row (see hypothesis_boost() for math):
+#   (a) exhausted-demote (shipped b890e94): row.classes ∩ EXHAUSTED.md.classes
+#       → multiply by EXH_PENALTY (0.4)
+#   (b) hypothesis-boost  (this commit):    row.text ∩ active-hypothesis.text
+#       → add COEFF * median * signal (where signal weights class-tokens 1.0
+#         and generic tokens 0.2, capped at HYP_CAP=4)
+# Both can fire on the same row — an exhausted vector aligned with an active
+# hypothesis takes a smaller net demotion (chain-building hint).
+#
+# CONFIRMED-class boost still deferred to a separate commit.
+def hypothesis_boost(row, hypo_tokens, median):
+    """Compute the additive boost for one row against the union hypothesis
+    token set. Returns (boost_value, list_of_matched_tokens).
+    Returns (0, []) if no signal — safe to always add.
+
+    Signal weighting (from prior critique's must-fix #3):
+      class-keyword token (rare, high-signal) → 1.0 each
+      generic token                            → 0.2 each
+    A single class-token match therefore already crosses a meaningful
+    threshold ("ssrf" alone), while noise tokens need to accumulate."""
+    if not hypo_tokens or median <= 0:
+        return 0.0, []
+    # Case-critical: lowercase BOTH sides. The prior critique flagged that
+    # pseudocode lowercased hypo_tokens but not row_tokens — a silent no-op.
+    row_text = " ".join([
+        str(row.get("title","") or ""),
+        str(row.get("description","") or ""),
+    ])
+    row_tokens = tokenize_text(row_text)
+    overlap = row_tokens & hypo_tokens
+    if not overlap:
+        return 0.0, []
+    signal = 0.0
+    for t in overlap:
+        signal += HYP_CLASS_WEIGHT if t in CLASS_KEYWORDS else HYP_GENERIC_WEIGHT
+    signal = min(signal, HYP_CAP)
+    boost = HYP_COEFF * median * signal
+    return boost, sorted(overlap)
+
+def apply_state_filter(fused_rows, exhausted, hypotheses, engaged, limit):
     """Return a new ranked list. Every row gets:
         _rrf_score     — unchanged (immutable — other consumers depend on scale)
         _final_score   — post-adjustment score used for sorting
         _state_adj     — dict describing what changed (always present)
     Non-mutating on the fusion score. Idempotent (result of running twice
     equals result of running once — the filter operates on _rrf_score, not
-    on the previously-emitted _final_score)."""
+    on the previously-emitted _final_score).
+
+    Median score for boost scaling is computed ONCE over the top-`limit` rows
+    of the pre-adjustment fusion — pinning this prevents the boost from
+    drifting between calls with different fusion sizes (during-implement #1)."""
+    import statistics
     exhausted_cls = exhausted["classes"] if exhausted else set()
+
+    # Pin median over the top-`limit` slice — this is the pool the caller will
+    # actually see, so it's the right basis for a scale-invariant boost.
+    top_slice = fused_rows[:max(limit, 1)]
+    median_score = (statistics.median(r.get("_rrf_score", 0.0) for r in top_slice)
+                    if top_slice else 0.0)
+
+    # Union hypothesis tokens across all active hypotheses. Log count so an
+    # operator watching _state_adj can see growth (during-implement #8:
+    # HYPOTHESES.md accumulates until a resolve subcommand ships).
+    active_hyps = hypotheses["active"] if hypotheses else []
+    hypo_tokens = set()
+    for h in active_hyps:
+        hypo_tokens |= h.get("tokens", set())
+    hypo_count = len(active_hyps)
+
     out = []
     for r in fused_rows:
         r = dict(r)
         rrf = r.get("_rrf_score", 0.0)
         adj = {}
         final = rrf
+
+        # (a) exhausted-demote (unchanged from b890e94)
         if engaged and exhausted_cls:
             row_cls = row_normalized_classes(r)
             matched = sorted(row_cls & exhausted_cls)
             if matched:
-                penalty = EXH_PENALTY  # e.g. 0.4 → multiply score by 0.4
-                final = rrf * penalty
+                penalty = EXH_PENALTY
+                final = final * penalty
                 adj["exhausted_penalty"] = penalty
                 adj["classes_matched"]   = matched
+
+        # (b) hypothesis-boost — additive; applied after demote so an exhausted
+        # row that still aligns with an active hypothesis gets partial recovery.
+        if engaged and hypo_tokens:
+            boost, tokens_matched = hypothesis_boost(r, hypo_tokens, median_score)
+            if boost > 0:
+                final = final + boost
+                adj["hypothesis_boost"]        = round(boost, 6)
+                adj["hypothesis_tokens_matched"] = tokens_matched
+        # Always record active count when engaged — even 0 is informative
+        if engaged and hypo_count:
+            adj["hypothesis_active_count"] = hypo_count
+
         r["_final_score"] = round(final, 6)
         r["_state_adj"]   = adj  # empty dict when nothing applied — always present
         out.append(r)
@@ -524,16 +671,21 @@ fused = rrf(hits)
 # auto = fires whenever --target is set. Load state ONCE (not per row).
 engaged = (STATE_FILTER == "on") or (STATE_FILTER == "auto" and bool(TARGET))
 exhausted_state = load_exhausted_state(TARGET) if engaged else None
-fused = apply_state_filter(fused, exhausted_state, engaged)[:LIMIT]
+hypotheses     = load_hypotheses(TARGET)     if engaged else None
+fused = apply_state_filter(fused, exhausted_state, hypotheses, engaged, LIMIT)[:LIMIT]
 
 # state metadata for JSON output — makes the filter observable
 state_meta = {
-    "filter":            STATE_FILTER,
-    "engaged":           bool(engaged),
-    "exhausted_classes": sorted(exhausted_state["classes"]) if exhausted_state else [],
-    "exhausted_tuples":  [list(t) for t in sorted(exhausted_state["tuples"])] if exhausted_state else [],
-    "exhausted_path":    str(exhausted_state["path"].relative_to(REPO)) if (exhausted_state and exhausted_state["path"]) else None,
-    "penalty":           EXH_PENALTY,
+    "filter":              STATE_FILTER,
+    "engaged":             bool(engaged),
+    "exhausted_classes":   sorted(exhausted_state["classes"]) if exhausted_state else [],
+    "exhausted_tuples":    [list(t) for t in sorted(exhausted_state["tuples"])] if exhausted_state else [],
+    "exhausted_path":      str(exhausted_state["path"].relative_to(REPO)) if (exhausted_state and exhausted_state["path"]) else None,
+    "penalty":             EXH_PENALTY,
+    "hypotheses_active":   len(hypotheses["active"]) if hypotheses else 0,
+    "hypotheses_path":     str(hypotheses["path"].relative_to(REPO)) if (hypotheses and hypotheses["path"]) else None,
+    "hypothesis_coeff":    HYP_COEFF,
+    "hypothesis_cap":      HYP_CAP,
 }
 
 if FMT == "json":
@@ -557,14 +709,20 @@ else:
             print(f"  source: {k:9s}  → {state}")
     if engaged and exhausted_state and exhausted_state["classes"]:
         print(f"  state:              exhausted classes={sorted(exhausted_state['classes'])} penalty={EXH_PENALTY}x")
+    if engaged and hypotheses and hypotheses["active"]:
+        print(f"  state:              hypotheses active={len(hypotheses['active'])} boost={HYP_COEFF}x median (cap={HYP_CAP})")
     print()
     if not fused:
         print("  (no results across any source)")
     else:
-        print(f"  fused top {len(fused)} (sources shown per row; ★ = state-demoted):")
+        # marker: ★ demoted (exhausted-class hit), ▲ boosted (hypothesis-aligned), ✚ both
+        print(f"  fused top {len(fused)} (sources shown per row; ★=demoted ▲=boosted ✚=both):")
         for i, r in enumerate(fused, 1):
             srcs = "+".join(r.get("_sources", []))
-            demoted = "★" if r.get("_state_adj", {}).get("exhausted_penalty") else " "
-            print(f"  {i:>2}. {demoted} [{r['_final_score']:.4f}]  [{r.get('type','?'):<12s}]  [{srcs:15s}]  {r.get('title','')[:60]}")
+            adj = r.get("_state_adj", {})
+            demoted = bool(adj.get("exhausted_penalty"))
+            boosted = bool(adj.get("hypothesis_boost"))
+            marker = "✚" if (demoted and boosted) else "▲" if boosted else "★" if demoted else " "
+            print(f"  {i:>2}. {marker} [{r['_final_score']:.4f}]  [{r.get('type','?'):<12s}]  [{srcs:15s}]  {r.get('title','')[:60]}")
             print(f"                                                                {r.get('path','')}")
 PY

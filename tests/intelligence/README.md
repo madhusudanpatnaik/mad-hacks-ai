@@ -17,7 +17,7 @@ Individual suites:
 python3 tests/intelligence/test_retrieval.py                        # aggregate MRR / R@5 / R@10 / P@5 / nDCG@10
 python3 tests/intelligence/test_retrieval.py --category synonym     # per-category
 python3 tests/intelligence/test_retrieval.py --json                  # machine-readable
-python3 tests/intelligence/test_state.py --verbose                   # state adversarial (27 assertions)
+python3 tests/intelligence/test_state.py --verbose                   # state adversarial (37 assertions)
 python3 tests/intelligence/test_end_to_end.py --verbose              # full observe→recall→exhaust loop (12 assertions)
 ```
 
@@ -48,7 +48,7 @@ direct >= 0.559 · synonym >= 0.359 · indirect >= 0.095 · ambiguous >= 0.339 �
 
 **Baseline v1 (superseded)**: FTS5 MRR=0.464, RRF MRR=0.468 (see `brain/lessons.md` entry 2026-09-04T07:30:12Z).
 
-**Trade-off history (measured, suite-caught):** blind expansion regressed RRF MRR -30% (0.468 → 0.261). Loose <5 fallback regressed -6% (→0.343). Zero-threshold + K_RAW/3 pool lifted to 0.468. State-as-filter refactor (v2) fixed a latent rrf() dedup bug and lifted to 0.549 (+17%).
+**Trade-off history (measured, suite-caught):** blind expansion regressed RRF MRR -30% (0.468 → 0.261). Loose <5 fallback regressed -6% (→0.343). Zero-threshold + K_RAW/3 pool lifted to 0.468. State-as-filter refactor (v2) fixed a latent rrf() dedup bug and lifted to 0.549 (+17%). Hypothesis-boost (v2b) is neutral for the harness (no --target passed by test_retrieval); its impact registers in engagement-time behavior — a boosted hypothesis-aligned row typically climbs 2-4 ranks (see `test_state.test_hypothesis_boost_promotes`).
 
 ---
 
@@ -71,7 +71,7 @@ Extend by appending JSONL rows. Re-run to measure.
 
 ## State adversarial (`test_state.py`)
 
-27 assertions covering both the v1 audit points (#5 negative-knowledge granularity, #7 state-as-filter visibility) and the v2 state-as-filter refactor.
+37 assertions covering v1 audit points (#5 negative-knowledge granularity, #7 state-as-filter visibility), v2 state-as-filter refactor, and v2b hypothesis-boost.
 
 **v1 (9 assertions):**
 - 4 epistemic statuses (`OBSERVED`/`DERIVED`/`INFERRED`/`HYPOTHESIS`) distinguishable in the ledger
@@ -94,7 +94,18 @@ Extend by appending JSONL rows. Re-run to measure.
 - `multi-source: penalty fires on both lex and non-lex rows` (via CLASS_KEYWORDS inference)
 - `hunter-contract: engagement-state files still surface in results[]` (backwards compat)
 
-**Current: 27/27 passing.**
+**v2b (10 additional assertions, hypothesis-boost commit):**
+- `hypothesis-boost: at least one row received a positive boost` (mechanism fires)
+- `hypothesis-boost: _final_score > _rrf_score on boosted row` (additive maths)
+- `hypothesis-boost: hypothesis_tokens_matched populated` in `_state_adj`
+- `hypothesis-boost: class-vocabulary token detected` on at least one row (weighting works)
+- `case-insensitive: ssrf-hunter row received boost despite mixed-case hypothesis` (no case-blind regression)
+- `hypotheses_active: starts at 0 after init`
+- `hypotheses_active: increments to 2 after two adds`
+- `hypotheses_active: _state_adj carries hypothesis_active_count on affected rows` (growth sensor)
+- `hypothesis-absent: no row carries hypothesis_boost/tokens when HYPOTHESES.md is empty` (opt-in contract)
+
+**Current: 37/37 passing.**
 
 ---
 

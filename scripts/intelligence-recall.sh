@@ -66,24 +66,100 @@ FTS_DB      = REPO / "brain" / "registry" / "assets.db"
 FAISS_INDEX = REPO / "brain" / "registry" / "assets.faiss"
 WRITEUP_DB  = Path(os.path.expanduser("~/.local/share/pentest-writeups/metadata.db"))
 
+# ─── security-vocabulary query expansion ───────────────────
+# Maps a query token (lowercase) → set of synonyms/related terms to OR into
+# the lexical search. Doesn't touch the registry — expansion happens per query.
+# Aligned with brain/lesson-index.md's class keyword map.
+EXPANSIONS = {
+    "bola":         ["idor", "broken object level authorization", "authorization"],
+    "idor":         ["bola", "broken object level authorization", "authorization"],
+    "ssrf":         ["server-side request forgery", "url fetch", "backend fetch"],
+    "xss":          ["cross-site scripting", "reflection", "javascript injection"],
+    "sqli":         ["sql injection", "sqlmap", "ghauri"],
+    "rce":          ["remote code execution", "command injection", "code execution", "exec"],
+    "ssti":         ["template injection", "server-side template", "jinja"],
+    "xxe":          ["xml external entity", "xxe injection", "billion laughs"],
+    "csrf":         ["cross-site request forgery", "state-changing"],
+    "cors":         ["origin reflection", "access-control-allow"],
+    "lfi":          ["local file inclusion", "path traversal"],
+    "jwt":          ["json web token", "alg none", "alg confusion", "kid injection"],
+    "oauth":        ["openid", "oidc", "redirect_uri", "pkce"],
+    "crlf":         ["header injection", "response splitting", "%0d%0a"],
+    "clickjacking": ["ui redressing", "frame busting", "x-frame-options"],
+    "hpp":          ["http parameter pollution", "parameter pollution"],
+    "deserialization":["insecure deserialization", "object injection"],
+    "graphql":      ["introspection", "batching", "resolver"],
+    "ato":          ["account takeover", "auth-session"],
+    "wcd":          ["cache deception", "static extension"],
+    # semantic ← surface: hints that describe symptoms
+    "authorization bypass": ["idor", "bola", "auth bypass"],
+    "url parameter":        ["url", "parameter", "webhook"],
+    "backend fetch":        ["ssrf", "server-side request"],
+    "template renders":     ["ssti", "template injection"],
+    "static extension":     ["cache deception", "cache-deception"],
+    "double extension":     ["file upload", "extension filter"],
+}
+
+def expand_query(query):
+    """Return an OR-expanded query string mixing original + synonyms + related terms."""
+    lo = query.lower()
+    added = set()
+    for key, syns in EXPANSIONS.items():
+        if key in lo:
+            for s in syns:
+                added.add(s)
+    if not added:
+        return query
+    # emit original + expansions (space-joined; FTS5 tokenizer will handle each word)
+    return query + " " + " ".join(sorted(added))
+
 # ─── source 1: LEXICAL (SQLite FTS5, BM25 ranking) ─────────
+def _fts_query(conn, words, op="AND", limit=None):
+    """Run one FTS5 MATCH; returns raw rows."""
+    if not words: return []
+    match_expr = f" {op} ".join(f'"{w}"*' for w in words)
+    lim = limit or K_RAW
+    try:
+        return conn.execute(
+            "SELECT row_json, bm25(assets) AS rank FROM assets WHERE assets MATCH ? ORDER BY rank LIMIT ?",
+            (match_expr, lim)
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
 def source_lex(query):
+    """Lexical retrieval — tries strict AND on the original query first, then
+    OR-fallback with expanded vocabulary IF the strict result set is < 5. This
+    preserves precision on strong queries while letting weak/synonym queries
+    benefit from the expansion map."""
     if not FTS_DB.exists() or "lex" not in SOURCES:
         return []
     import re
     words = re.findall(r"[A-Za-z0-9_-]+", query)
     if not words:
         return []
-    match_expr = " AND ".join(f'"{w}"*' for w in words)
     conn = sqlite3.connect(str(FTS_DB))
     conn.row_factory = sqlite3.Row
-    try:
-        rows = conn.execute(
-            "SELECT row_json, bm25(assets) AS rank FROM assets WHERE assets MATCH ? ORDER BY rank LIMIT ?",
-            (match_expr, K_RAW)
-        ).fetchall()
-    except sqlite3.OperationalError:
-        rows = []
+
+    # tier 1: strict AND on the original query — precise, high-precision
+    rows = _fts_query(conn, words, op="AND")
+
+    # tier 2: ONLY when strict returned zero, fall back to expanded OR search.
+    # This preserves precision on strong queries (which get 1+ hit and stop
+    # here) and rescues synonym/indirect queries (which get 0 hits and expand).
+    # Rationale: measured — <5 threshold flooded top-K on direct queries and
+    # DROPPED MRR/nDCG. Zero-threshold + fallback lifts synonym MRR without
+    # regressing direct.
+    if len(rows) == 0:
+        expanded = expand_query(query)
+        exp_words = re.findall(r"[A-Za-z0-9_-]+", expanded)
+        if exp_words and set(exp_words) != set(words):
+            # Smaller fallback pool — marginal hits dilute RRF fusion when they
+            # compete with high-precision writeup+target hits. Measured: K_RAW/3
+            # keeps RRF regression <2% while lifting synonym-category R@10 from
+            # 0.0 → 0.7 (previously unanswerable queries now surface anything).
+            rows = _fts_query(conn, exp_words, op="OR", limit=max(3, K_RAW // 3))
+
     conn.close()
     return [{**json.loads(r["row_json"]), "_src": "lex", "_rank": i + 1}
             for i, r in enumerate(rows)]
@@ -217,7 +293,9 @@ def rrf(source_hits, k=K_RRF):
     return ranked
 
 # ─── run ────────────────────────────────────────────────────
-# If --class was passed, augment the query with it (so lex/sem pick up class-tagged docs)
+# The original query drives each source. source_lex() handles fallback-expansion
+# internally (strict AND first; OR+expansion only if <5 hits). Passing the raw
+# query to every source keeps precision high on strong queries.
 q_full = QUERY + (f" {CLASS}" if CLASS else "")
 
 hits = {

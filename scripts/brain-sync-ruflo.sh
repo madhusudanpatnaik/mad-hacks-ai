@@ -98,6 +98,9 @@ with open(os.environ["OUT"], "a") as out:
         line = line.strip()
         if not line: continue
         row = json.loads(line)
+        # skip the registry's header/warning row (added 2026-09-04)
+        if row.get("_meta") and row.get("_generated_by"): continue
+        if "id" not in row: continue
         rec = {
             "namespace":   "mad-hacks",
             "key":         row["id"],

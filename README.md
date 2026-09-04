@@ -177,6 +177,11 @@ Per-category MRR (RRF, 2026-09-04 v2): direct **0.676** · synonym **0.578** · 
 
 **The retrieval suite (`tests/intelligence/`) freezes these numbers.** Every future router change is compared numerically, not "looks good on toy queries." The suite has caught two bad tunes already (blind expansion regressed MRR −30%, threshold-<5 fallback regressed MRR −6%) and validated the good ones (zero-threshold expansion +28%, state-as-filter refactor +17%). Per-category floors are now hardcoded — any category regressing >5% below baseline fails the suite.
 
+**Operator-integration surface** — `tests/e2e/` covers what the retrieval suite doesn't:
+- **Scope gate as security boundary** (`test_scope_boundary.py`, 45 assertions) — 14 adversarial variants (suffix-confusion, IPv6-mapped IPv4, credentials-injection, IDN/punycode, wildcard depth, trailing-dot, mixed-case, deny-wins) + fail-closed invariant (`engagement-state.sh init` refuses OUT-OF-SCOPE targets when `--scope-check <SCOPE.md>` is passed or `.t3mp3st/SCOPE.md` is discoverable; exit code 4).
+- **Full `/mad-hunt` pipeline walk** (`test_engagement_e2e.py`, 65 assertions) — deterministic synthetic chain: scope → state → recon → classifier → intelligence recall → exhausted-not-prioritized → hypothesis-surfaced → evidence-captured → verifier-input → report-input → brain-learns. Every hop asserts its contract.
+- Combined: **159 assertions** across retrieval + state + operator. Runs in ~60 s. `bash tests/run-all.sh`.
+
 ## MCP integration (auto-detected)
 
 - **Burp Suite MCP** — every specialist hunter runs `ToolSearch("burp proxy repeater intruder collaborator")` at dispatch; if present, Repeater = primary probe channel + Collaborator = primary OOB backend. Register: `claude mcp add burp ...` (recipe: [`references/burp-integration.md`](references/burp-integration.md)).

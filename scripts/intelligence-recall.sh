@@ -45,6 +45,8 @@ LIMIT=10
 SOURCES="lex,sem,writeups,target"
 FORMAT="text"
 STATE_FILTER="auto"   # auto|on|off — auto = fires when --target set
+SLICE_ID=""           # audit-slice id — narrows retrieval to that slice's
+                      # attack_surface + invariant classes (per mad-audit doctrine)
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -53,11 +55,51 @@ while [ $# -gt 0 ]; do
     --limit)        LIMIT="${2:-10}"; shift 2 ;;
     --sources)      SOURCES="${2:-}"; shift 2 ;;
     --state-filter) STATE_FILTER="${2:-auto}"; shift 2 ;;
+    --slice)        SLICE_ID="${2:-}"; shift 2 ;;
     --json)         FORMAT="json"; shift ;;
     --help|-h)      sed -n '1,40p' "$0"; exit 0 ;;
     *)              QUERY="${QUERY:+$QUERY }$1"; shift ;;
   esac
 done
+
+# ─── --slice: augment query with the slice's attack_surface + invariant classes ─
+# When present, we PREPEND the slice's canonical vocabulary to the raw query.
+# This tightens FTS matching toward slice-relevant assets without discarding
+# the operator's ad-hoc terms.
+if [ -n "$SLICE_ID" ] && [ -f "./.audit/slices.yaml" ] && [ -f "./.audit/invariants.yaml" ]; then
+  # Probe for python-with-yaml (Homebrew python3 lacks yaml on macOS)
+  _PY_YAML=""
+  for _py in python3 /usr/bin/python3 /opt/homebrew/bin/python3 /usr/local/bin/python3; do
+    if command -v "$_py" >/dev/null 2>&1 && "$_py" -c "import yaml" >/dev/null 2>&1; then
+      _PY_YAML="$_py"; break
+    fi
+  done
+  SLICE_TERMS=""
+  if [ -n "$_PY_YAML" ]; then
+  SLICE_TERMS=$("$_PY_YAML" - "$SLICE_ID" <<'PYEOF' 2>/dev/null
+import sys, yaml
+try:
+    slices = yaml.safe_load(open("./.audit/slices.yaml")).get("slices", []) or []
+    invs   = {i["id"]: i for i in (yaml.safe_load(open("./.audit/invariants.yaml")).get("invariants", []) or [])}
+except Exception:
+    sys.exit(0)
+sid = sys.argv[1]
+sl = next((s for s in slices if s.get("id") == sid), None)
+if sl is None: sys.exit(0)
+terms = set(c.lower() for c in (sl.get("attack_surface", []) or []))
+for iid in sl.get("invariants", []) or []:
+    inv = invs.get(iid)
+    if inv:
+        for c in inv.get("classes", []) or []:
+            terms.add(c.lower())
+print(" ".join(sorted(terms)))
+PYEOF
+)
+  fi   # end of _PY_YAML availability branch
+  if [ -n "$SLICE_TERMS" ]; then
+    QUERY="$SLICE_TERMS ${QUERY:-}"
+  fi
+fi
 [ -n "$QUERY" ] || { sed -n '1,40p' "$0"; exit 2; }
 
 command -v python3 >/dev/null || { echo "intelligence-recall: python3 required"; exit 3; }
@@ -66,7 +108,7 @@ case "$STATE_FILTER" in auto|on|off) : ;;
   *) echo "intelligence-recall: --state-filter must be auto|on|off (got: $STATE_FILTER)" >&2; exit 2 ;;
 esac
 
-export REPO QUERY TARGET CLASS LIMIT SOURCES FORMAT STATE_FILTER
+export REPO QUERY TARGET CLASS LIMIT SOURCES FORMAT STATE_FILTER SLICE_ID
 python3 - <<'PY'
 import json, os, sqlite3, sys, subprocess
 from pathlib import Path
@@ -79,6 +121,7 @@ LIMIT  = int(os.environ["LIMIT"])
 SOURCES = set(s.strip() for s in os.environ["SOURCES"].split(",") if s.strip())
 FMT    = os.environ["FORMAT"]
 STATE_FILTER = os.environ.get("STATE_FILTER", "auto")
+SLICE_ID     = os.environ.get("SLICE_ID", "")
 
 K_RRF  = int(os.environ.get("MADHACKS_RRF_K", "60"))
 K_RAW  = int(os.environ.get("MADHACKS_LIMIT_PER_SOURCE", "15"))
@@ -686,6 +729,7 @@ state_meta = {
     "hypotheses_path":     str(hypotheses["path"].relative_to(REPO)) if (hypotheses and hypotheses["path"]) else None,
     "hypothesis_coeff":    HYP_COEFF,
     "hypothesis_cap":      HYP_CAP,
+    "slice_id":            SLICE_ID or None,
 }
 
 if FMT == "json":

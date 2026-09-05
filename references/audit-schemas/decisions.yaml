@@ -1,0 +1,47 @@
+# decisions.yaml — the negative-memory ledger
+#
+# Every REJECTED candidate produces a decision here. This is the highest-
+# value memory in the whole system: it prevents the next slice (or the
+# next engagement) from re-discovering the same false positive.
+#
+# CONFIRMED candidates also produce a decision so the reasoning stays
+# with the finding — but the finding itself lives in
+# .t3mp3st/<target>/findings/F-*.md (via report.sh import-evidence).
+
+schema_version: 1
+
+decisions:
+  # - id: DEC-001
+  #   slice_id: S-USERAUTH-001
+  #   candidate_id: CAND-002
+  #   decision: REJECT
+  #
+  #   claim: |
+  #     JWT algorithm-confusion attack: send alg:HS256 signed with the
+  #     RS256 public key.
+  #
+  #   reason:
+  #     - server rejects any token whose header alg differs from the
+  #       registered alg in the JWKS pin
+  #     - verified via /debug/token-echo which returned "alg mismatch"
+  #       for the crafted HS256 token
+  #     - middleware pins RS256 in src/auth/jwt.ts:47
+  #
+  #   evidence: [EV-014, EV-015]
+  #
+  #   lesson: |
+  #     When alg is PINNED at middleware setup (not read from token
+  #     header), alg-confusion is not viable. Grep for the alg pin
+  #     BEFORE running the alg-confusion probe next time.
+  #
+  #   applies_to_hunters: [oauth-hunter, jwt-hunter]
+  #   promoted_to_brain_lesson: false        # true after brain.sh learn <lesson>
+  #   promoted_lesson_id: null
+
+  # - id: DEC-002
+  #   slice_id: S-USERAUTH-001
+  #   candidate_id: CAND-001
+  #   decision: CONFIRMED
+  #   claim: ...
+  #   evidence: [EV-001, EV-002, EV-003]
+  #   finding_file: .t3mp3st/target/findings/F-003-jwt-alg-none.md

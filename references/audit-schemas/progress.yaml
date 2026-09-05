@@ -1,0 +1,34 @@
+# progress.yaml — per-slice execution log
+#
+# Written by audit-slice.sh state transitions AND audit-hunt.sh dispatch
+# results. Human-readable, appendable, diffable in git.
+
+schema_version: 1
+
+runs:
+  # - slice_id: S-USERAUTH-001
+  #   started_at: 2026-09-05T12:34:56Z
+  #   completed_at: 2026-09-05T13:47:22Z
+  #   dispatched_hunters: [oauth-hunter, jwt-hunter, auth-tester]
+  #   candidates: [CAND-001, CAND-002, CAND-003]
+  #   verified_confirmed: [CAND-001]
+  #   verified_rejected: [CAND-002, CAND-003]
+  #   decisions: [DEC-001, DEC-002, DEC-003]
+  #   context_accounting:
+  #     total_input_tokens: 42000
+  #     total_output_tokens: 8500
+  #     persistent_scaffolding_tokens: 3200    # system-context + threat-model
+  #     slice_context_tokens: 1800              # this slice's yaml block
+  #     memory_tokens: 4200                     # intelligence-recall top-K
+  #     code_exploration_tokens: 26000          # actual file reads / probes
+  #     verification_tokens: 6800
+
+# Aggregate — updated on every audit-slice complete
+aggregate:
+  slices_planned: 0
+  slices_complete: 0
+  slices_skipped: 0
+  slices_invalidated: 0
+  candidates_found: 0
+  candidates_confirmed: 0
+  candidates_rejected: 0

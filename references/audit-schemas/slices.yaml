@@ -1,0 +1,55 @@
+# slices.yaml — the unit of work
+#
+# One slice = one trust boundary + 1-5 invariants + specific entry points
+# + 2-6 hunters. Bigger than that and the article's technique loses effect.
+# Smaller than that and orchestration overhead dominates.
+#
+# ORDERED: audit-slice.sh next picks the first slice whose status is
+# 'planned' AND whose depends_on slices are all 'complete' or 'skipped'.
+# Reorder freely by editing this file.
+
+schema_version: 1
+
+slices:
+  - id: S-USERAUTH-001
+    name: "JWT verification of bearer tokens at /api middleware"
+
+    # Which threat this slice contributes to (from threat-model.yaml).
+    threat: T-001
+
+    # Which invariants this slice tries to violate (from invariants.yaml).
+    invariants: [INV-001, INV-002, INV-003]
+
+    # The attacker context (from system-context.yaml).
+    attacker: A-001
+
+    # WHERE in the code / URL space to look. Not "authentication" but
+    # "auth/jwt.ts + middleware/auth.ts + /api/** entrypoints".
+    entry_points:
+      - GET /api/users/:id
+      - GET /api/users
+      - POST /api/users/:id/settings
+    files:
+      - src/auth/jwt.ts
+      - src/auth/jwks.ts
+      - src/middleware/auth.ts
+
+    # WHAT hunter capability signals matter (used by audit-hunt scorer).
+    # Attack surface is the primary vocabulary — matches hunter's
+    # supported_classes. Capabilities are extra hints (e.g. "cross-file
+    # tracing" or "crypto-analysis") the scorer can weight.
+    attack_surface: [jwt, auth-session, oauth]
+    required_capabilities: [source-tracing, crypto-analysis]
+
+    # Hunters the operator preferred at planning time. Scorer will still
+    # rank all hunters; this is a bias toward the operator's intent when
+    # scores tie.
+    preferred_hunters: [oauth-hunter, jwt-hunter, auth-tester]
+
+    # Ordering
+    depends_on: []
+    status: planned                # planned | active | complete | skipped | invalidated
+
+  # - id: S-USERAUTH-002
+  #   name: "IDOR on /api/users/:id read"
+  #   ...

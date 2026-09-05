@@ -44,3 +44,6 @@ __pycache__/
 packs/Awesome-Bugbounty-Writeups/
 packs/vulnerability-research/
 packs/AILA/
+
+# Per-engagement audit state (never commit)
+.audit/

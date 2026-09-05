@@ -18,6 +18,7 @@ Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded 
 
 - **`/mad-hacks`** — general operator. Loads `SKILL.md`, routes assets via `references/router.md` (3-tier lazy load).
 - **`/mad-hunt`** — bounty spine: scope-gate → surface probe A–J → surface × payout-ranked specialists (≥25 attempts/class) → 7-Q + `t3-verifier` REFUTE gate → `chain-builder` escalation → platform-ready draft. Loop: `references/mad-hunt.md`.
+- **`/mad-audit`** — invariant-driven source audit (sliced, small active context, strict verifier with inverted framing). `audit-slice.sh init <t>` → `.audit/{system-context,threat-model,invariants,slices,progress,decisions}.yaml` → `slice-planner` → per-slice `audit-hunt.sh` 3-dim scoring (attack-surface + invariant-coverage + dependency) → 2-6 hunters → `verifier-strict` → decisions.yaml (negative memory) → next slice. Loop: `references/mad-audit.md`.
 - **`/cdc-research`** — novel-vuln loop with chain-until-impact + layered halting (soft budget · plateau tripwire · hard budget · operator interrupt). Spec: `references/cdc-harness.md`. State: `scripts/cdc-state.sh`.
 
 ---

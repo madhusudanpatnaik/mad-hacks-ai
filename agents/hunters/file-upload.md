@@ -26,6 +26,17 @@ At the start of every dispatch, before any probe:
    ```
    Fuses lexical (SQLite FTS5, BM25) + semantic (FAISS, if installed) + writeup corpus (6.7k rows) + `.engagement/<target>/` state via Reciprocal Rank Fusion. Returns a ranked, deduplicated bundle of references + scripts + tools + payloads + lessons + agents + writeups + target-memory. **Use this first — it replaces the old 3-way brain.sh chain.**
 
+   **Audit-mode branch (per `/mad-audit`)**: if the environment variable
+   `AUDIT_SLICE` is set (or your prompt names a slice-id like `S-XXXX-NNN`),
+   run the recall with `--slice $AUDIT_SLICE` instead. That prepends the
+   slice's `attack_surface` + invariant classes to the query, tightening
+   retrieval to slice-relevant assets. Reference: `references/mad-audit.md`.
+   Example:
+   ```bash
+   bash ~/.claude/skills/mad-hacks/scripts/intelligence-recall.sh "<terms>" \
+        --slice "$AUDIT_SLICE" --target <target> --limit 12
+   ```
+
 3. **Engagement state — read what's already been tested + exhausted:**
    ```bash
    bash ~/.claude/skills/mad-hacks/scripts/engagement-state.sh recall <target>

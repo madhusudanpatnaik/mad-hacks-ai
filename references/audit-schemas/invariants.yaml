@@ -1,0 +1,53 @@
+# invariants.yaml — testable properties
+#
+# Every invariant is a MECHANICAL predicate over the running system that
+# an adversary can attempt to violate. If you can't imagine writing a
+# probe that would prove or disprove it, it's not an invariant — it's a
+# hope. Delete it and write something crisper.
+#
+# The `classes` field is what the audit-hunt scorer uses to match hunters
+# to invariants. Pick from the CLASS_KEYWORDS vocabulary
+# (scripts/intelligence-recall.sh) so retrieval works too.
+
+schema_version: 1
+
+invariants:
+  - id: INV-001
+    statement: |
+      All read endpoints under /api/users/** require a valid session
+      cookie or bearer token; unauthenticated requests receive 401.
+    classes: [authz, auth-session]
+    depends_on: []            # other invariants that MUST hold for this to matter
+    tested_by: []             # slice IDs that probed it (populated by audit-slice)
+
+  - id: INV-002
+    statement: |
+      For every /api/users/:id read, the requesting principal MUST be
+      either the record owner, an administrator, or a delegated caller
+      whose delegation was granted BY the record owner. Cross-tenant
+      reads return 403.
+    classes: [idor, authz]
+    depends_on: [INV-001]
+    tested_by: []
+
+  - id: INV-003
+    statement: |
+      401/403/500 responses on /api/users/** MUST NOT include record
+      contents (email, phone, password_hash, mfa_secret) in body or
+      headers. Stack traces MUST NOT be returned.
+    classes: [info-disclosure]
+    depends_on: []
+    tested_by: []
+
+  - id: INV-004
+    statement: |
+      Every write endpoint that touches a user record MUST enforce the
+      same auth AND authz as INV-001 + INV-002 — including bulk/batch
+      endpoints (per CVE-2026-9136 pattern: batch_import trusting
+      user-supplied `id` → cross-tenant UPDATE).
+    classes: [idor, authz, business-logic]
+    depends_on: [INV-001, INV-002]
+    tested_by: []
+
+  # - id: INV-005
+  #   statement: ...

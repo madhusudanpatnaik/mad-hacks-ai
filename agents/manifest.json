@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
   "generated_by": "scripts/agents-manifest.py",
-  "agent_count": 55,
+  "agent_count": 57,
   "hunters": 31,
-  "operators": 24,
+  "operators": 26,
   "agents": [
     {
       "agent_id": "auth-tester",
@@ -78,8 +78,8 @@
       "agent_id": "business-logic",
       "agent_type": "hunter",
       "path": "agents/hunters/business-logic.md",
-      "sha256": "169f0139bda6cba71d250f3756707023559357ab4c6b536e74ceeb63ece97127",
-      "size_bytes": 12698,
+      "sha256": "8af87871a6bceda0c988942c1cf8e581baa5ffd5562d71c520b40c29e922c477",
+      "size_bytes": 13240,
       "description": "Business Logic vulnerability specialist (H1 #28, CWE-840/841/639/362). Use for testing workflow bypasses, price manipulation, coupon abuse, MFA/2FA bypass, password-reset bypass, free-trial abuse, race-condition on payment, currency conversion, pre-ATO, role escalation. Standalon",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -95,7 +95,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -106,8 +107,8 @@
       "agent_id": "cloud-recon",
       "agent_type": "hunter",
       "path": "agents/hunters/cloud-recon.md",
-      "sha256": "77eac4b8ed9e4a2e003ef95ff6a365b4b22e9521b8dd898d85dfa85a0246f426",
-      "size_bytes": 7926,
+      "sha256": "4d5d8b24825e404dfea3e906247d319c317ac6751490eccab6489ad02817eaa2",
+      "size_bytes": 8468,
       "description": "Cloud misconfiguration scanner. Use for S3 bucket enumeration, Azure blob discovery, GCP storage checks, exposed cloud services, and cloud metadata analysis. Provide target domain or known cloud identifiers.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -122,7 +123,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -133,8 +135,8 @@
       "agent_id": "config-auditor",
       "agent_type": "hunter",
       "path": "agents/hunters/config-auditor.md",
-      "sha256": "ccbd57086ed8adeea9a1476b39ad2b8ecec6f55dd82e21969afabb4017749578",
-      "size_bytes": 8732,
+      "sha256": "708b501b18a35cc096af9bfae5831bb6f2cedcba58a67677ee33b34cae6a7d25",
+      "size_bytes": 9274,
       "description": "Security header and server configuration auditor. Use for HTTP security header analysis, CSP evaluation, CORS policy review, TLS configuration assessment, cookie security, and server hardening checks. Provide target URL or list of URLs.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "haiku",
@@ -148,7 +150,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -159,8 +162,8 @@
       "agent_id": "cors-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/cors-hunter.md",
-      "sha256": "b775a8d9d99d2bc32b09dc05689be198f6b16e2aee9a3fdf317ccc8ca3ac5ff0",
-      "size_bytes": 6066,
+      "sha256": "1d79c14aa4d33cbb66fcd3fb8fc73d0b8b89d39cd0e9f78d0a01ea0702b0d79b",
+      "size_bytes": 6608,
       "description": "CORS Misconfiguration specialist (H1 #58). Use for testing cross-origin resource sharing policies, origin reflection, null origin bypass, and credential-bearing cross-origin requests.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -175,7 +178,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -186,8 +190,8 @@
       "agent_id": "csrf-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/csrf-hunter.md",
-      "sha256": "36b8e6ffae6d10b6232c149846c6de83fe990986a010b18d7a373085293e7610",
-      "size_bytes": 5863,
+      "sha256": "ac5c69d9d0fb67c49213a09177dc9f7354e6214d8490319a6d2f49a247295098",
+      "size_bytes": 6405,
       "description": "CSRF specialist (H1 #57). Use for testing state-changing actions without proper token validation, SameSite cookie bypass, and CSRF in JSON/API endpoints.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -201,7 +205,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -226,8 +231,8 @@
       "agent_id": "file-upload",
       "agent_type": "hunter",
       "path": "agents/hunters/file-upload.md",
-      "sha256": "26a385efc1a7cb0eb84cf48716d6486155ab80844b4d04078bda0c5a04e66da4",
-      "size_bytes": 6126,
+      "sha256": "80a9d4c6a182f8b93c675cfb7c782d763655c3986673ace47eb0b1deac6f35ec",
+      "size_bytes": 6668,
       "description": "File Upload vulnerability specialist (H1 #39). Use for testing upload restrictions, content-type bypass, extension filtering, path traversal in filenames, and web shell upload scenarios.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -242,7 +247,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -253,8 +259,8 @@
       "agent_id": "graphql-audit",
       "agent_type": "hunter",
       "path": "agents/hunters/graphql-audit.md",
-      "sha256": "75e35de0ec23ef23e180822b82824b44bfaf664b2874fb3c2f83e3297e3fd3c4",
-      "size_bytes": 8978,
+      "sha256": "eb444bc5082d7782200f86f5b1cfe46e74522919d9bd5cfc6b40f53f42aef4a2",
+      "size_bytes": 9520,
       "description": "GraphQL API security specialist. Use for introspection analysis, query complexity attacks, injection testing, authorization bypass, and batching abuse on GraphQL endpoints.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -268,7 +274,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -279,8 +286,8 @@
       "agent_id": "idor-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/idor-hunter.md",
-      "sha256": "36e1729b8a920c85f3e8f9ad61b212efbb7d57b5fc3359af8eb0e83fdf2d6a42",
-      "size_bytes": 7041,
+      "sha256": "8ffbf8f63f03693e367fb80ccc62f7ce14dcfbb79f46d06e95f359d32a542d36",
+      "size_bytes": 7583,
       "description": "IDOR / BOLA specialist (H1 #55, OWASP API1:2023). Use for testing insecure direct object references and broken object level authorization across web apps, APIs, GraphQL endpoints, multi-tenant SaaS, mobile, automotive/IoT, and AI inference servers.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -295,7 +302,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -306,8 +314,8 @@
       "agent_id": "info-disclosure",
       "agent_type": "hunter",
       "path": "agents/hunters/info-disclosure.md",
-      "sha256": "83ba336c4b72e006d9eb1c954dc0b42d2deb6006466a2d94bc48a66a4e80ae2a",
-      "size_bytes": 10692,
+      "sha256": "512a6aca398a9707b7e95aafcd48c7df07fb3ca892574011f68e9a3ba905e89b",
+      "size_bytes": 11234,
       "description": "Information Disclosure specialist (H1 #18, CWE-200/209/215/538/668/798). Use for finding exposed sensitive data: stack traces, debug endpoints, config files, environment variables, API keys, .git/.env exposure, Spring Actuator surfaces, source code leaks. Standalone is feeder-cla",
       "tools": "Bash, Read, Write, Edit, Glob, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "haiku",
@@ -323,7 +331,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -369,8 +378,8 @@
       "agent_id": "oauth-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/oauth-hunter.md",
-      "sha256": "6c2bcaba5367d672f320729e99ab101ed3bb11ce62d136370b770aeb21238231",
-      "size_bytes": 9941,
+      "sha256": "e2136d7d3142cb2b76272f4c738c0b28a905b034c63d019dc21a6413a748e384",
+      "size_bytes": 10483,
       "description": "OAuth 2.0 / 2.1, OpenID Connect (OIDC), SAML SSO, and JWT specialist. Dispatcher passes subtype \u2014 'oauth', 'oidc', 'saml', or 'jwt' \u2014 in the task; falls back to inference. Use for redirect_uri / returnTo flaws, state/nonce/PKCE bypass, alg confusion (none/HS-with-RS-key/kid/jku),",
       "tools": "Bash, Read, Write, Edit, WebFetch, Grep, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -387,7 +396,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -398,8 +408,8 @@
       "agent_id": "open-redirect",
       "agent_type": "hunter",
       "path": "agents/hunters/open-redirect.md",
-      "sha256": "a045963b9e0adb3095c5ca778fa5486d1147e33826b33f87c9c65ad83ad2fa27",
-      "size_bytes": 5954,
+      "sha256": "c47becb00ff7f780385df268d96d9fc5f9a6683bf355fd14822ce26f3b05bb69",
+      "size_bytes": 6496,
       "description": "Open Redirect specialist (H1 #38). Use for testing URL redirect parameters, login/logout flows, OAuth callbacks, and any endpoint that redirects based on user input.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -414,7 +424,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -441,8 +452,8 @@
       "agent_id": "race-condition",
       "agent_type": "hunter",
       "path": "agents/hunters/race-condition.md",
-      "sha256": "04f35793b657a68d6dbe582836c8332cd4f7625f0590ee74895de4dc04f2ec17",
-      "size_bytes": 6152,
+      "sha256": "362cc9aa4868fa85a6abfdce9d093728be1f8e01b084f5e8280412ac26862442",
+      "size_bytes": 6694,
       "description": "Race Condition specialist (H1 #29). Use for testing TOCTOU flaws, double-spend, parallel request abuse on balance operations, coupon redemption, and any non-idempotent state changes.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -457,7 +468,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -468,8 +480,8 @@
       "agent_id": "rce-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/rce-hunter.md",
-      "sha256": "8bef8f4712f1084c509a0302645f6cd075deb2507c92a7a1eb8b7d05ef9d2dcc",
-      "size_bytes": 7347,
+      "sha256": "55e5347774ce28469151160261b14f888a8f19bcfdaf18ea7c0dfe4e28b08ad0",
+      "size_bytes": 7889,
       "description": "Remote Code Execution specialist (H1 #70). Use for testing command injection, template injection (SSTI), deserialization, expression language injection, and any vector that achieves server-side code execution.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -486,7 +498,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -513,8 +526,8 @@
       "agent_id": "sqli-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/sqli-hunter.md",
-      "sha256": "9432e8126b823c995131b91cde81d1d526a7578e3ec9ad7728d9380a47ef4880",
-      "size_bytes": 7485,
+      "sha256": "a70b84312915b8e7d25de239719ceb6c24a1de21ff0e90c3a50e9ef8092eb992",
+      "size_bytes": 8027,
       "description": "SQL Injection specialist (H1 #67). Use for error-based, blind boolean, blind time-based, UNION-based, and out-of-band SQLi testing. Provide target endpoints with injectable parameters.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -529,7 +542,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -540,8 +554,8 @@
       "agent_id": "ssrf-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/ssrf-hunter.md",
-      "sha256": "a07da66ecdfde166432a51c727b24caad775658354e742bcbc262ce0d9a00f60",
-      "size_bytes": 8850,
+      "sha256": "7ce827a64ce64012dcfbf223ccd9597d659fa995785e761f70252e593fb7080f",
+      "size_bytes": 9392,
       "description": "SSRF vulnerability hunting specialist. Use for testing URL-accepting parameters, webhook endpoints, file import features, and any server-side request functionality. Provide target endpoints with URL parameters.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -556,7 +570,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -567,8 +582,8 @@
       "agent_id": "ssti-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/ssti-hunter.md",
-      "sha256": "95e1573a9591829d4dc1830f6841452c49e09024bc8e72f369b12b7d540221cf",
-      "size_bytes": 20603,
+      "sha256": "078734db8c355f61b5c336db5c90d3aa9b96df7fcd829212a87cd1489fe2d3e1",
+      "size_bytes": 21145,
       "description": "Server-Side Template Injection specialist. Covers Jinja2 (H1 #74), Twig, Velocity, FreeMarker, ERB, Handlebars, Thymeleaf. Use for any rule-engine, comment/message rendering, PR automation, admin template, or user-customizable template surface. Systematic blocklist mapper + CVE b",
       "tools": "Bash, Read, Write, Edit, Glob, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -583,7 +598,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -594,8 +610,8 @@
       "agent_id": "subdomain-takeover",
       "agent_type": "hunter",
       "path": "agents/hunters/subdomain-takeover.md",
-      "sha256": "ee163bef102d501495abe03600d214f9f8725622720a411944698961978075a4",
-      "size_bytes": 6839,
+      "sha256": "9df1759976035b3460c02a57504907b18fa42e9ba040726de44ccc58e722ab88",
+      "size_bytes": 7381,
       "description": "Subdomain Takeover specialist (H1 #145). Use for finding dangling DNS records pointing to unclaimed cloud resources, expired services, or deprovisioned infrastructure.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, WebSearch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -611,7 +627,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -669,8 +686,8 @@
       "agent_id": "xss-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/xss-hunter.md",
-      "sha256": "04922994ccccf5370d6afa19555afc8f1b60c8eab4deb2ec38f01d4023d2e833",
-      "size_bytes": 14431,
+      "sha256": "9387ae4325826f3b5516d21a649d5e6a0bc13d36f2bdbb455664c2878cd6b2ef",
+      "size_bytes": 14973,
       "description": "XSS specialist covering reflected (H1 #60), stored (H1 #61), and DOM (H1 #62). Dispatcher passes subtype \u2014 'reflected', 'stored', or 'dom' \u2014 in the task; falls back to inference from target. Use for parameter reflection, persisted inputs (comments/profiles/uploads/filenames), or ",
       "tools": "Bash, Read, Write, Edit, Glob, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -687,6 +704,7 @@
         "burp-integration.md",
         "dalfox-guide.md",
         "hunt-xss.md",
+        "mad-audit.md",
         "vuln-playbooks.md"
       ],
       "requires_mcp": [
@@ -698,8 +716,8 @@
       "agent_id": "xxe-hunter",
       "agent_type": "hunter",
       "path": "agents/hunters/xxe-hunter.md",
-      "sha256": "368a2891d971af97a6925a85ed4293c828c89a4acb91a130cf19fc53a6662d42",
-      "size_bytes": 6817,
+      "sha256": "2408836d05c26524400de5c5673eb4d260da1fdc15405622eb81429643bc212e",
+      "size_bytes": 7359,
       "description": "XXE specialist (H1 #63). Use for testing XML parsing endpoints, file upload processors, SOAP services, SVG handlers, and any feature accepting XML input.",
       "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
       "model": "inherit",
@@ -715,7 +733,8 @@
       ],
       "requires_references": [
         "burp-integration.md",
-        "dalfox-guide.md"
+        "dalfox-guide.md",
+        "mad-audit.md"
       ],
       "requires_mcp": [
         "burp proxy repeater intruder collaborator",
@@ -1004,6 +1023,28 @@
       "requires_mcp": []
     },
     {
+      "agent_id": "slice-planner",
+      "agent_type": "operator",
+      "path": "agents/operators/slice-planner.md",
+      "sha256": "3cb51fd4677d932ebc92cb26de7de6cb74a3e90e2b63e42d0e0574259da79466",
+      "size_bytes": 3449,
+      "description": "Sliced-audit planner (per /mad-audit). Reads recon output + .audit/system-context.yaml + brain writeup-corpus + CVE tracker; writes .audit/threat-model.yaml + invariants.yaml + slices.yaml. Produces small, invariant-driven slices (1 trust boundary + 1-5 invariants + specific entr",
+      "tools": "Bash, Read, Write, Edit, Grep, Glob",
+      "model": "inherit",
+      "supported_classes": [
+        "recon"
+      ],
+      "requires_scripts": [
+        "audit-hunt.sh",
+        "audit-slice.sh",
+        "intelligence-recall.sh"
+      ],
+      "requires_references": [
+        "cve-tracker.md"
+      ],
+      "requires_mcp": []
+    },
+    {
       "agent_id": "t3-exploiter",
       "agent_type": "operator",
       "path": "agents/operators/t3-exploiter.md",
@@ -1138,6 +1179,20 @@
       "size_bytes": 9639,
       "description": "Finding validator. Runs 7-Question Gate + 4-gate checklist. Kills weak/theoretical findings FAST before any report writing. Output: PASS, KILL, DOWNGRADE, or CHAIN REQUIRED.",
       "tools": "Bash, Read, Glob, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
+      "model": "inherit",
+      "supported_classes": [],
+      "requires_scripts": [],
+      "requires_references": [],
+      "requires_mcp": []
+    },
+    {
+      "agent_id": "verifier-strict",
+      "agent_type": "operator",
+      "path": "agents/operators/verifier-strict.md",
+      "sha256": "9e0341553e049000695505dfd8ec49200296d714c82b7ee578b71b12d3fedfc2",
+      "size_bytes": 5500,
+      "description": "Inverted-framing verifier for /mad-audit candidates. You are NOT a second hunter \u2014 the candidate is presumed FALSE. Your job is to disprove it. Only after failing to disprove do you evaluate exploitability. Output is a structured verdict (reachability/attacker_control/invariant_v",
+      "tools": "Bash, Read, Grep, WebFetch",
       "model": "inherit",
       "supported_classes": [],
       "requires_scripts": [],

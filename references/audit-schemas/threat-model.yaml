@@ -1,0 +1,43 @@
+# threat-model.yaml — the compression algorithm
+#
+# Converts "audit N thousand lines of code" into "test these M invariants
+# against these K attacker contexts". Every threat is a statement of the
+# form: "Attacker <A> must NOT be able to <action> on <asset> via
+# <boundary>". The invariants that make that statement true live in
+# invariants.yaml and are referenced by id.
+#
+# This file is EDITABLE throughout the audit. When a slice discovers
+# something that changes your model, update it and note the change in
+# decisions.yaml.
+
+schema_version: 1
+
+threats:
+  - id: T-001
+    statement: |
+      Attacker <internet_unauthenticated> must NOT be able to <read any
+      user's PII> via <internet_to_edge → application backend>.
+    attacker: A-001                # → attackers[A-001] in system-context.yaml
+    crown_jewel: CJ-001            # → crown_jewels[CJ-001]
+    trust_boundary: TB-001         # → trust_boundaries[TB-001]
+
+    # Invariants that (together) make the statement true. Every invariant
+    # is INDEPENDENTLY testable. Auditing this threat means turning each
+    # invariant into a slice and trying to violate it.
+    invariants:
+      - INV-001  # auth required to read user records
+      - INV-002  # per-user authz enforced on record reads
+      - INV-003  # error responses do not leak record contents
+      - INV-004  # DB errors do not include record contents
+
+    # If a hunter discovers something that changes the surface (new
+    # endpoint, new bucket, new bypass class), come back HERE, edit
+    # this threat, and add a new invariant + new slice.
+    revision_history: []
+    # e.g.
+    # - date: 2026-09-10
+    #   change: "added INV-005 after discovering /api/internal/users backdoor"
+    #   decision_id: DEC-012
+
+  # - id: T-002
+  #   statement: ...

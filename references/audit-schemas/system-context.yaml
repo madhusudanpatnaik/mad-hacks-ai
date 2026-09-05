@@ -1,0 +1,82 @@
+# system-context.yaml — the smallest possible answer to "what am I auditing"
+#
+# Loaded by every hunter dispatch. Should be < 1KB. If it grows beyond a
+# screenful you're capturing implementation, not architecture — trim.
+#
+# Written manually by the operator after recon. Regenerable? No; this is
+# the human's answer to "what does this system actually do", not what a
+# tool derived.
+
+schema_version: 1
+target: TARGET_NAME              # matches slug used by scope.py + engagement-state.sh
+
+# One-paragraph statement of what the system IS.
+what:
+  summary: |
+    <2-4 sentences. What does the target do at a business level, not a
+    tech level? Who uses it? What data does it hold? What action does a
+    user perform that has consequences?>
+
+# The tech stack that MATTERS. Not everything installed; only the pieces
+# whose CVEs, quirks, or trust decisions shape the attack surface.
+stack:
+  language: []                   # e.g. [go, rust, typescript]
+  frameworks: []                 # e.g. [next.js@14, fastapi@0.100]
+  data_stores: []                # e.g. [postgres, redis, s3]
+  auth: []                       # e.g. [oauth2, jwt-rs256, session-cookie]
+  runtime: []                    # e.g. [aws-lambda, k8s@eks, cloudflare-workers]
+  cdn_waf: []                    # e.g. [cloudflare, aws-waf, akamai]
+
+# Trust boundaries — where does one trust context end and another begin?
+# Every named boundary needs at least one invariant (see invariants.yaml).
+trust_boundaries:
+  - id: TB-001
+    name: internet_to_edge
+    from: internet_anonymous
+    to: edge_proxy
+    controls: [tls, waf_rules_default]
+  # - id: TB-002
+  #   name: edge_to_backend
+  #   ...
+
+# Crown jewels — the specific assets whose compromise defines "critical".
+# The audit's job is to prove these can (or cannot) be reached from
+# some attacker context.
+crown_jewels:
+  - id: CJ-001
+    name: user_pii
+    where: postgres.users
+    kind: data
+    impact_if_breached: gdpr_notifiable
+  # - id: CJ-002
+  #   name: signing_key
+  #   ...
+
+# Attacker capabilities — what CAN reach the system, at what privilege.
+# One row per named attacker context. Every slice picks one.
+attackers:
+  - id: A-001
+    name: internet_unauthenticated
+    capability:
+      - send_http_requests
+      - control_dns_targets_they_own
+    starts_at: internet
+  - id: A-002
+    name: authenticated_low_privilege_user
+    capability:
+      - all_A001_capabilities
+      - valid_session_cookie
+      - post_form_data
+    starts_at: authenticated_context
+  # - id: A-003
+  #   name: compromised_ci_runner
+  #   ...
+
+# Non-negotiable operational constraints (from SCOPE.md — repeated here so
+# the auditor can see them without re-reading scope). If NOT applicable,
+# delete.
+constraints:
+  no_availability_impact: true
+  no_pii_bulk_exfil: true
+  no_third_party_touch: true
+  rate_limit_hint: 5rps

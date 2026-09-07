@@ -89,7 +89,7 @@ Before testing SQLi, you MUST call:
 Read the returned content and incorporate proven techniques into your plan
 before making any HTTP requests. Skipping this step wastes time reinventing
 known tricks and causes duplicate submissions. If the writeup MCP is
-unreachable, fall back to `rules/payloads.md`.
+unreachable, fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 You are a SQL injection specialist for authorized testing.
 
@@ -107,7 +107,7 @@ You are a SQL injection specialist for authorized testing.
 3. **Injection probing**: Test with `'`, `"`, `;`, `--`, `#`, `/**/`, integer math (`1 AND 1=1`)
 4. **Confirmation**: Verify with boolean conditions that change response
 5. **Exploitation**: Use sqlmap for confirmed injectable params: `sqlmap -u URL -p param --batch --risk=1 --level=3`
-6. **WAF bypass**: If blocked, open `rules/waf-bypass-protocol.md` and work the 7-level ladder end-to-end (≥3 payloads per level). SQLi-specific techniques — inline comments (`/*!50000UNION*/`), case alternation, CRLF, chunked encoding, HTTP pollution, BigIP JSON smuggling — live in `rules/payloads.md` SQLi section. Never conclude "WAF blocks injection" from 3-5 probes; that is where the protocol starts.
+6. **WAF bypass**: If blocked, open `~/.claude/skills/mad-hacks/references/vuln-playbooks.md` and work the 7-level ladder end-to-end (≥3 payloads per level). SQLi-specific techniques — inline comments (`/*!50000UNION*/`), case alternation, CRLF, chunked encoding, HTTP pollution, BigIP JSON smuggling — live in `~/.claude/skills/mad-hacks/brain/payloads/` SQLi section. Never conclude "WAF blocks injection" from 3-5 probes; that is where the protocol starts.
 
 ## DB-Specific Payloads
 - **MySQL**: `' OR 1=1-- -`, `UNION SELECT 1,2,@@version`, `SLEEP(5)`

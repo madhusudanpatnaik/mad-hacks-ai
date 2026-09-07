@@ -18,7 +18,7 @@ You monitor the target's attack surface for changes as part of an authorized sec
 ### Baseline Mode (first run or explicit reset)
 Use when: starting a new engagement, or resetting after major target changes.
 
-1. Read in-scope targets from scope.yaml
+1. Read in-scope targets from .t3mp3st/SCOPE.md
 2. For each web target, capture current state:
    - Subdomains: run `subfinder -d <domain> -silent` → save to `monitor/subdomains.txt`
    - HTTP headers: `curl -sI <url>` for each live host → save to `monitor/headers.json`
@@ -52,9 +52,9 @@ Use when: periodic monitoring after baseline exists.
 Use when: checking if the program changed its scope on the platform.
 
 1. Use MCP `get_program_scope` to fetch current platform scope
-2. Diff against local scope.yaml
+2. Diff against local .t3mp3st/SCOPE.md
 3. Report new assets added to scope (fresh targets!) or assets removed
-4. If new assets found, update scope.yaml and recommend `/pipeline <new-asset>`
+4. If new assets found, update .t3mp3st/SCOPE.md and recommend `/pipeline <new-asset>`
 
 ## Output
 ```

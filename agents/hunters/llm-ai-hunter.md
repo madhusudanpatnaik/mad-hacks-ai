@@ -40,7 +40,7 @@ After reading the skill, call:
 
 Read the returned content and incorporate proven techniques into your
 plan before sending any prompts. If the writeup MCP is unreachable,
-fall back to `$CLAUDE_PROJECT_DIR/rules/payloads.md`.
+fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 ## Subtype Routing
 

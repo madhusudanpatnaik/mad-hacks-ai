@@ -80,7 +80,7 @@ Before testing open redirects, you MUST call:
 Read the returned content and incorporate proven techniques into your plan
 before making any HTTP requests. Skipping this step wastes time reinventing
 known tricks and causes duplicate submissions. If the writeup MCP is
-unreachable, fall back to `rules/payloads.md`.
+unreachable, fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 You are an open redirect specialist for authorized testing.
 

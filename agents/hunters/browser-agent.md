@@ -71,18 +71,16 @@ If Burp MCP is NOT available:
 - Use curl for requests (provide auth headers manually)
 - Use Interactsh or webhook.site for OOB
 
-## When to hand off to `browser-stealth-agent`
+## Bot-protection targets (Cloudflare / Akamai / DataDome / PerimeterX)
 
-If you encounter any of the following while testing, stop and dispatch `browser-stealth-agent` instead:
+If you encounter any of the following while testing, stop and record `blocked:bot-detection:<signal>` via `brain.sh note <target>` — mad-hacks does not ship a stealth-browser primitive:
 
 - The target returns a Cloudflare interstitial, Turnstile widget, Akamai bot challenge, Google reCAPTCHA Enterprise, DataDome, or PerimeterX challenge page
 - Vanilla chromedriver / Claude-in-Chrome returns the challenge HTML instead of the app HTML
 - `httpx -title` on the target reports "Just a moment..." or "Attention Required!"
 - You need to capture a screenshot of the vulnerable page for a report and the browser is showing the challenge page
 
-`browser-stealth-agent` drives a local Camoufox (C++-patched Firefox) server at `http://localhost:9377` that survives these bot-detection checks. See `docs/stealth-browsing.md` for the full reference.
-
-Both agents can be used in the same hunt. Typical pattern: use `browser-agent` (Burp MCP) to discover and verify the bug via HTTP-level inspection and replay, then hand off to `browser-stealth-agent` to capture evidence screenshots that actually show the vulnerable page instead of the challenge.
+Options when this happens: (1) run the WAF-bypass ladder from `~/.claude/skills/mad-hacks/references/vuln-playbooks.md#403-bypass`; (2) request the program's traffic identifier header and retry; (3) log the block, pivot, and hand off to the human to drive a real browser session for evidence capture. Do not fabricate screenshots.
 
 ## Top-Tier Operator Standard
 
@@ -92,4 +90,4 @@ Browser automation must prove what a real user session can do.
 - Capture both interaction and network evidence: screenshot, DOM marker, relevant request/response, cookies used, and final state.
 - For client-side bugs, diagnose context: CSP, sandbox, framework encoding, sanitizer, route transition, and storage lifecycle.
 - Do not claim impact from visual behavior alone. Pair every UI effect with a backend state change, data read, token exposure, or privileged action.
-- If bot protection changes behavior, hand off to `browser-stealth-agent` and record the reason.
+- If bot protection changes behavior, log the signal via `brain.sh note <target> "blocked:bot-detection:<reason>"` and pivot (WAF-bypass ladder or human-driven browser session).

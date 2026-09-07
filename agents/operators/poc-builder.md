@@ -41,7 +41,7 @@ Every report you produce follows this format:
 
 ### Severity
 CVSS vector string with justification for each metric choice.
-Check `scope.yaml` for the platform:
+Check `.t3mp3st/SCOPE.md` for the platform:
 - `platform: hackerone` → Use CVSS 3.1
 - All other platforms → Use CVSS 4.0
 
@@ -100,15 +100,16 @@ poc/{target}/{vuln-id}/
 
 You MUST capture evidence for every PoC you build. This is not optional.
 
-After creating the PoC files, run:
+After creating the PoC files, capture evidence with the host OS tooling and save into `poc/{target}/{vuln-id}/evidence/`:
 ```bash
-uv run python3 $CLAUDE_PROJECT_DIR/tools/capture.py screenshot
-uv run python3 $CLAUDE_PROJECT_DIR/tools/capture.py record
+# Screenshot (macOS interactive)
+screencapture -i poc/{target}/{vuln-id}/evidence/step-N.png
+# Video (macOS)
+screencapture -v poc/{target}/{vuln-id}/evidence/chain.mov
+# Video (Linux/xdg): ffmpeg -f x11grab -i :0.0 poc/{target}/{vuln-id}/evidence/chain.mp4
 ```
 
-Save evidence to `poc/{target}/{vuln-id}/evidence/`.
-Verify evidence files exist with `ls` before referencing them in reports.
-If capture.py is not available, note "evidence pending" — do NOT invent file paths.
+Verify evidence files exist with `ls` before referencing them in reports. If capture fails (no display, headless), note "evidence pending" — do NOT invent file paths.
 
 ## Rules
 - You MUST write all output files using the Write tool — terminal output alone is NOT sufficient

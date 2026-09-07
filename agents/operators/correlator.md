@@ -17,7 +17,7 @@ Before proposing a chain, you MUST call:
 
 Prior chains show what DOES combine into terminal impact. Use them to
 validate that your proposed chain is realistic. If the writeup MCP is
-unreachable, fall back to `rules/chain-table.md`.
+unreachable, fall back to `~/.claude/skills/mad-hacks/brain/hunt-classes.md`.
 
 You are a finding correlation specialist. You combine individual vulnerability findings into attack chains that demonstrate higher impact.
 

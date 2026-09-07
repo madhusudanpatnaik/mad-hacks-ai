@@ -80,13 +80,13 @@ Before testing subdomain takeover, you MUST call:
 Read the returned content and incorporate proven techniques into your plan
 before making any HTTP requests. Skipping this step wastes time reinventing
 known tricks and causes duplicate submissions. If the writeup MCP is
-unreachable, fall back to `rules/payloads.md`.
+unreachable, fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 You are a subdomain takeover specialist for authorized testing.
 
 ## Before probing: check vendor status
 
-Read `rules/vendor-status.md` before testing any CNAME. Patched services (e.g.
+Read `~/.claude/skills/mad-hacks/references/cve-tracker.md` before testing any CNAME. Patched services (e.g.
 Azure App Service `*.azurewebsites.net`) are reserved indefinitely by the
 vendor — skip them. The cooldown table tells you which services still have a
 claimable window and which require policy clearance first.

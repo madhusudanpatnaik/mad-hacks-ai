@@ -236,9 +236,10 @@ write them back with `brain.sh finding|note|exhausted <target> "…"`.
 ## Browser-verify gate (mandatory for client-side proof)
 
 `alert(1)` and curl reflection are NOT final evidence. For every
-reflected/stored/DOM finding, dispatch the `browser-verifier` agent (or
-drive a browser yourself) to PROVE the payload fires in a real browser in
-the right context. Prefer DOM markers (`document.title`, global write)
+reflected/stored/DOM finding, drive a real browser (per
+`~/.claude/skills/mad-hacks/references/mad-hunt.md` §5 Client-side
+verification) to PROVE the payload fires in the right context. Prefer
+DOM markers (`document.title`, global write)
 over dialogs for WAF/headless reliability. No client-side finding ships
 without browser confirmation. See `references/hunt-xss.md` § "Browser-verify gate".
 
@@ -247,7 +248,7 @@ without browser confirmation. See `references/hunt-xss.md` § "Browser-verify ga
 XSS is confirmed in a browser, in the right context, with a meaningful action.
 
 - Classify context before payloads: HTML body, attribute, URL, JS string, template literal, CSS, SVG, markdown, DOM sink, postMessage, or rich-text sanitizer. (`references/hunt-xss.md` § "Context classification FIRST".)
-- Use DOM markers and browser-verifier. `alert(1)` and curl reflection are not final evidence.
+- Use DOM markers and manual browser verification. `alert(1)` and curl reflection are not final evidence.
 - Prove impact: privileged action, token/code exposure, stored execution for another user, CSP bypass, account setting change, or sensitive data read.
 - Test sanitizer/parser differentials, framework hydration, mutation XSS, markdown renderers, iframe sandbox, and source-to-sink reachability.
 - Kill self-XSS, dead reflections, blocked CSP with no bypass, and execution only in attacker-owned content unless chainable.

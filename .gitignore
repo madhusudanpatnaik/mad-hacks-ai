@@ -71,6 +71,12 @@ packs/vulnerability-research/**
 !packs/vulnerability-research/.vendored
 !packs/vulnerability-research/.internal
 !packs/vulnerability-research/.deprecated
+packs/camofox-browser/**
+!packs/camofox-browser/EXTRACTION.md
+!packs/camofox-browser/.vendored
+!packs/camofox-browser/.internal
+!packs/camofox-browser/.deprecated
+
 packs/AILA/**
 !packs/AILA/EXTRACTION.md
 !packs/AILA/.vendored

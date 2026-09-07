@@ -104,7 +104,7 @@ After reading the skill, call:
 - `search_payloads` with `"Info-Disclosure"` — working payloads and bypass variants
 
 If the writeup MCP is unreachable, fall back to
-`$CLAUDE_PROJECT_DIR/rules/payloads.md`.
+`~/.claude/skills/mad-hacks/brain/payloads/`.
 
 ## CHAIN-FEEDER DISCIPLINE (load-bearing — read carefully)
 
@@ -114,7 +114,7 @@ unlock other vuln classes. Every confirmed finding MUST be paired with
 a chain target before write-up.
 
 After confirming any leak, immediately probe the chain anchors from
-`$CLAUDE_PROJECT_DIR/rules/chain-table.md` "Per-Class Chain Anchors →
+`~/.claude/skills/mad-hacks/brain/hunt-classes.md` "Per-Class Chain Anchors →
 info-disclosure":
 
 1. **Bundle / source / config containing OAuth secrets** → dispatch
@@ -134,7 +134,7 @@ info-disclosure":
    section). If it accesses other-user data → IDOR-via-key.
 
 **If a leak unlocks NO chain target → finding is informational. Apply
-`rules/never-submit.md`. Do not draft.**
+`~/.claude/skills/mad-hacks/references/production-safety.md`. Do not draft.**
 
 Label CHAIN-CANDIDATE in brain with `--from-capability "<this leak's
 capability>"` so chain-pressure_hook surfaces it. The chain is the
@@ -174,7 +174,7 @@ The 26-pattern regex pack: `$CLAUDE_PROJECT_DIR/wordlists/secret-patterns.txt`.
 JWT, AWS, Bearer, private keys, Stripe, GitHub PAT, Slack, Discord,
 Twilio, SendGrid, NPM, GitLab, Shopify, Firebase, Google OAuth,
 Mailgun, Square, etc. Full pattern table + impact notes in
-`$CLAUDE_PROJECT_DIR/rules/payloads.md` → "Info Disclosure — Secret
+`~/.claude/skills/mad-hacks/brain/payloads/` → "Info Disclosure — Secret
 / API-Key Regex Patterns".
 
 ```bash

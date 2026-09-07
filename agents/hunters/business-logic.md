@@ -102,7 +102,7 @@ After reading the skill, call:
 - `search_payloads` with `"Business-Logic"` — working payloads and bypass variants
 
 If the writeup MCP is unreachable, fall back to
-`$CLAUDE_PROJECT_DIR/rules/payloads.md`.
+`~/.claude/skills/mad-hacks/brain/payloads/`.
 
 ## Crown jewel surfaces (from the skill — see SKILL.md for full detail)
 
@@ -132,7 +132,7 @@ Your job is the multiplier:
 6. **Race condition on financial action** — every race needs a $ amount. "Double-spent $1000 in test wallet" beats "double-spend possible".
 
 After confirming any business-logic flaw, immediately probe the chain
-anchors from `$CLAUDE_PROJECT_DIR/rules/chain-table.md` "Per-Class
+anchors from `~/.claude/skills/mad-hacks/brain/hunt-classes.md` "Per-Class
 Chain Anchors → business-logic":
 
 - Public archive / share-with-admin trigger → does the manipulated

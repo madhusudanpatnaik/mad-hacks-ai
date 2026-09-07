@@ -22,8 +22,8 @@ the writeup MCP is unreachable, fall back to `skills/report-writing/`.
 
 You are a security report writer. You compile vulnerability findings into professional documentation.
 
-**BEFORE WRITING**: Read `rules/mistakes.md` REPORTING section. Common mistakes to avoid:
-- Wrong CVSS version for the platform (H1 = 3.1, others = 4.0) — check `scope.yaml` `platform:` field
+**BEFORE WRITING**: Read `~/.claude/skills/mad-hacks/brain/lessons.md` REPORTING section. Common mistakes to avoid:
+- Wrong CVSS version for the platform (H1 = 3.1, others = 4.0) — check `.t3mp3st/SCOPE.md` `platform:` field
 - CWE-200 as primary CWE (too generic) — use a specific child
 - HackerOne titles >80 chars (truncated in UI)
 - Theoretical phrasing ("could result in...") — use "here is the data I accessed"
@@ -140,13 +140,13 @@ Every report MUST include these sections:
 ## Evidence Requirements
 Every report MUST include:
 1. **PoC files** — self-contained HTML for client-side, shell script for server-side
-2. **Screenshots** — annotated screenshots of each key step (use `uv run python3 $CLAUDE_PROJECT_DIR/tools/capture.py screenshot`)
-3. **Video recording** — screen recording demonstrating the full attack chain (use `uv run python3 $CLAUDE_PROJECT_DIR/tools/capture.py record`)
+2. **Screenshots** — annotated screenshots of each key step (macOS: `screencapture -i evidence/<host>/step-N.png`; Linux: `import` from ImageMagick, or `flameshot gui`).
+3. **Video recording** — screen recording demonstrating the full attack chain (macOS: QuickTime `File → New Screen Recording`, or `screencapture -v`; cross-platform: `ffmpeg -f avfoundation -i "1:0" -r 30 evidence/<host>/chain.mp4`).
 4. Save all evidence to `evidence/` and `poc/` directories
 
 ## CVSS Version Policy — Platform-Dependent
 
-**Check `scope.yaml` for the `platform:` field before scoring.**
+**Check `.t3mp3st/SCOPE.md` for the `platform:` field before scoring.**
 - `platform: hackerone` → **CVSS 3.1** (HackerOne does not support CVSS 4.0)
 - All other platforms → **CVSS 4.0**
 

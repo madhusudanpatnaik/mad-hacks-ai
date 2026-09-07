@@ -105,7 +105,7 @@ After reading the skill, call:
 
 Read the returned content and incorporate proven techniques into your
 plan before making any HTTP requests. If the writeup MCP is unreachable,
-fall back to `$CLAUDE_PROJECT_DIR/rules/payloads.md`.
+fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 ## Crown jewel surfaces (from the skill — see SKILL.md for full detail)
 

@@ -179,11 +179,11 @@ If dalfox reports **no WAF fingerprint** but a payload is being stripped, dispat
 | Hunter / agent | How to use dalfox | Fallback |
 |---|---|---|
 | **xss-hunter** (reflected/DOM) | `dalfox scan <url-with-FUZZ> --inject-marker FUZZ --blind-oob --format jsonl --stream-findings --include-all` — feed each JSONL line into the VERIFY gate | curl + `brain/payloads/xss-by-context.md` |
-| **xss-hunter** (stored) | `dalfox scan urls.txt --custom-payload brain/payloads/xss-waf-bypass.txt` on the endpoints that persist, then re-fetch the rendering page | manual injection → browser-verifier |
+| **xss-hunter** (stored) | `dalfox scan urls.txt --custom-payload brain/payloads/xss-waf-bypass.txt` on the endpoints that persist, then re-fetch the rendering page | manual injection → real browser replay |
 | **t3-scanner** (WEAPONIZE phase) | `dalfox scan --dry-run <url>` — cheap preflight for parameter discovery + impact estimate, no attack traffic | web-scan.sh |
 | **CDC harness (research mode)** | `dalfox mcp` MCP server → CDC hunters call `preflight_dalfox` for safe surface mapping, then `scan_with_dalfox` (wait=true) for short scans | scripts/oob.sh + curl loops |
 | **/mad-hunt (bug-bounty mode)** | `--rate-limit` at program cap, `--waf-min-confidence 0.7`, `--blind-oob` for stored/blind chains | same |
-| **browser-verifier** | Consumes dalfox findings via SARIF, replays each PoC in a real browser | — |
+| **client-side verification** (manual, per mad-hunt §5) | Take each dalfox finding's PoC URL, open it in a real headed browser, capture DOM markers / console / network to prove execution in context | Chrome/Firefox with DevTools open |
 
 ---
 

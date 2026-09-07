@@ -79,7 +79,7 @@ Before auditing configuration, you MUST call:
 
 Read the returned content and incorporate proven techniques into your plan
 before making any HTTP requests. Skipping this step wastes time reinventing
-known tricks. If the writeup MCP is unreachable, fall back to `rules/payloads.md`.
+known tricks. If the writeup MCP is unreachable, fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 You are a web security configuration auditor for authorized security assessments.
 

@@ -42,39 +42,6 @@
       "requires_mcp": []
     },
     {
-      "agent_id": "browser-stealth-agent",
-      "agent_type": "hunter",
-      "path": "agents/hunters/browser-stealth-agent.md",
-      "sha256": "ddc9128738c47a69c5794909a470f3dece2166b0e614a03fbd20186b76ee8a0a",
-      "size_bytes": 10046,
-      "description": "Stealth browser automation agent for targets behind Cloudflare, Akamai, Google, DataDome, or PerimeterX bot detection. Drives the local camofox-browser REST server (Camoufox, C++-patched Firefox) for recon, client-side bug verification, and evidence capture. Prefer this over the ",
-      "tools": "Bash, Read, Write, Edit, Grep, WebFetch, mcp__writeup-search__search_writeups, mcp__writeup-search__get_writeup, mcp__writeup-search__search_techniques, mcp__writeup-search__search_payloads",
-      "model": "inherit",
-      "supported_classes": [
-        "cloud",
-        "recon"
-      ],
-      "requires_scripts": [],
-      "requires_references": [],
-      "requires_mcp": []
-    },
-    {
-      "agent_id": "browser-verifier",
-      "agent_type": "hunter",
-      "path": "agents/hunters/browser-verifier.md",
-      "sha256": "568135dc82936703290bf1f097373243e7cd1f24ec05e04aafbe0ba5961fb583",
-      "size_bytes": 9918,
-      "description": "Mandatory browser verification for client-side findings (XSS, DOM, postMessage, prototype pollution). Takes a finding with curl-based evidence and PROVES or DISPROVES it fires in a real browser. No finding ships without browser verification. Dispatched automatically by /hunt and ",
-      "tools": "Bash, Read, Write, Edit, Grep",
-      "model": "inherit",
-      "supported_classes": [
-        "xss"
-      ],
-      "requires_scripts": [],
-      "requires_references": [],
-      "requires_mcp": []
-    },
-    {
       "agent_id": "business-logic",
       "agent_type": "hunter",
       "path": "agents/hunters/business-logic.md",
@@ -1014,7 +981,7 @@
       "path": "agents/operators/scope-check.md",
       "sha256": "21c496bdd6fcd0ef60f33d71f57164f74fed7fb85c0ef242b03cb5a6cd4964d7",
       "size_bytes": 3279,
-      "description": "Target scope validation agent. Use BEFORE any active testing to verify targets are in scope. Provide the target and the program name or scope file. Checks against .scope.txt, scope.yaml, and fetches live program scope from HackerOne/Bugcrowd/Intigriti APIs if configured.",
+      "description": "Target scope validation agent. Use BEFORE any active testing to verify targets are in scope. Provide the target and the program name or scope file. Checks against .t3mp3st/SCOPE.md, and fetches live program scope from HackerOne/Bugcrowd/Intigriti APIs if configured.",
       "tools": "Bash, Read, Glob, Grep, WebFetch",
       "model": "inherit",
       "supported_classes": [],

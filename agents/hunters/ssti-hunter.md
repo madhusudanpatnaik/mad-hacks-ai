@@ -87,7 +87,7 @@ Before testing, you MUST call:
 - `search_payloads` with "ssti" — curated payload list
 - `search_writeups` with "jinja2 sandbox bypass SSTI" — recent CVE and CTF writeups
 
-Read returned content and incorporate proven techniques into your plan before making any HTTP requests. Skipping wastes time reinventing tricks from 2019. Fall back to `rules/payloads.md` if the MCP is unreachable.
+Read returned content and incorporate proven techniques into your plan before making any HTTP requests. Skipping wastes time reinventing tricks from 2019. Fall back to `~/.claude/skills/mad-hacks/brain/payloads/` if the MCP is unreachable.
 
 ## MANDATORY: Disk-first discipline
 
@@ -312,7 +312,7 @@ If a target is fronted by F5 BIG-IP ASM, the standard `${7*7}` probe will return
 
 **Cookies confirming F5 ASM in front:** `TS019d407a` / `TS01ee32dc` / similar `TS[a-f0-9]{8}` pattern, `lb-N-p-NNN` persistence cookies.
 
-The F5 rule is **start-anchored on the literal `${`** after URL-decoding once. Validated bypass primitives (raw-socket verified 2026-05 against banking-grade F5 ASM deployment — see `rules/payloads.md` "F5 BIG-IP ASM Bypass Primitives" section for full list with curl examples):
+The F5 rule is **start-anchored on the literal `${`** after URL-decoding once. Validated bypass primitives (raw-socket verified 2026-05 against banking-grade F5 ASM deployment — see `~/.claude/skills/mad-hacks/brain/payloads/` "F5 BIG-IP ASM Bypass Primitives" section for full list with curl examples):
 
 ### Tier 1 — try first (most reliable, simplest)
 
@@ -404,18 +404,18 @@ Per payload: source template, YAML wrapper, response body (first 500 chars), cla
 
 Before starting, read brain for existing sandbox maps on this or similar targets:
 ```
-uv run python3 $CLAUDE_PROJECT_DIR/tools/brain.py brief <target>
+bash ~/.claude/skills/mad-hacks/scripts/brain.sh recall <target>
 grep -r "ssti-sandbox-map\|blocklist-map" evidence/
 ```
 
 After completing, write:
 ```
-uv run python3 $CLAUDE_PROJECT_DIR/tools/brain.py record <target> <status> "ssti-<engine>" "<blocklist-summary + gaps tested + outcome>"
+bash ~/.claude/skills/mad-hacks/scripts/brain.sh note <target> <status> "ssti-<engine>" "<blocklist-summary + gaps tested + outcome>"
 ```
 
 For a sandbox with no gaps found:
 ```
-uv run python3 $CLAUDE_PROJECT_DIR/tools/brain.py record <target> exhausted "ssti-jinja2" "Blocklist includes mro; all dunders blocked at is_safe_attribute; |attr('format') CVE works for non-dunder only; no escape path. Pivot recommended."
+bash ~/.claude/skills/mad-hacks/scripts/brain.sh note <target> exhausted "ssti-jinja2" "Blocklist includes mro; all dunders blocked at is_safe_attribute; |attr('format') CVE works for non-dunder only; no escape path. Pivot recommended."
 ```
 
 ## Output

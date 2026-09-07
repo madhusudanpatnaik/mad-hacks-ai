@@ -164,7 +164,7 @@ Discipline gate (from `SKILL.md`): do not file XSS as **Critical** without demon
 
 ## 8. Browser-verify gate (mandatory)
 
-**curl reflection ≠ proof.** A payload can echo raw in Burp and still fail in a real browser — CSP, framework auto-escaping, context mismatch, WAF normalization, or HTML-parser differences. **Every client-side finding is verified in a real browser before it ships.** Dispatch the **browser-verifier** role (`references/mad-hunt.md` §5 VALIDATE); survivors then go to the adversarial **`agents/t3-verifier.md`** (REFUTE — try to kill it with benign explanations, blocking controls, inflated severity).
+**curl reflection ≠ proof.** A payload can echo raw in Burp and still fail in a real browser — CSP, framework auto-escaping, context mismatch, WAF normalization, or HTML-parser differences. **Every client-side finding is verified in a real browser before it ships.** Drive a real browser yourself per `references/mad-hunt.md` §5 Client-side verification (open the reflected URL headed, capture DOM markers / console / network); survivors then go to the adversarial **`agents/t3-verifier.md`** (REFUTE — try to kill it with benign explanations, blocking controls, inflated severity).
 
 - **Prefer DOM markers / OOB over `alert`** (tiers 4/6): they survive `window.alert` suppression, prove impact-beyond-popup, and work headless. Read exec via the browser tools' console/network (`read_console_messages`, `read_network_requests`).
 - **Note:** no shipping browser has an "XSS auditor" (Chrome's was removed in v78 / Oct 2019) — never attribute a failed PoC to one.

@@ -11,23 +11,12 @@ CONTEXT: You are operating within an authorized bug bounty program. All targets 
 
 You rank attack surface by testing ROI. Read recon output and brain data, output a prioritized plan. Your output MUST include concrete, copy-pasteable curl commands for every P1 target.
 
-## Autonomous Scoring Bootstrap (run first)
+## Scoring Bootstrap (manual — no auto-ranker in this harness)
 
-Before you produce rankings, run:
-
-```bash
-uv run python3 tools/intel_engine.py rank-surface \
-  --endpoints-file recon/endpoints.txt \
-  --tech-stack "<best detected stack fingerprint>" \
-  --output ATTACK_SURFACE_RANKING.md
-```
-
-Use this file as a numeric prior (P1/P2/Kill seed) and then refine with your
-deeper judgment from recon + brain context. If `recon/endpoints.txt` is missing,
-build an equivalent endpoint list from recon outputs and continue.
+Score every candidate endpoint against the Signals table below and write the ranked plan to `ATTACK_SURFACE_RANKING.md`. Read recon outputs (`recon/endpoints.txt` if present, else assemble from `evidence/<host>/surface/` + `recon.sh` output) and stack fingerprints, then let the Signals do the sort. Use `bash ~/.claude/skills/mad-hacks/scripts/brain.sh recall <target>` as the memory prior — endpoints that match prior-engagement wins on this stack move up.
 
 ## Inputs
-Read from: recon/, scans/, js-analysis/, .claude/agent-memory-local/brain/
+Read from: recon/, scans/, js-analysis/, ~/.claude/skills/mad-hacks/brain/
 
 ## Ranking Signals (highest to lowest)
 

@@ -62,7 +62,7 @@ Structure findings as:
 
 ## Rules
 - ALWAYS verify target is in scope before scanning
-- Check for scope file at `.scope.txt` or `scope.yaml` in the project root
+- Check for scope file at `.t3mp3st/SCOPE.md` in the project root (created via `bash ~/.claude/skills/mad-hacks/scripts/scope.sh init <target>`)
 - Never scan targets outside authorized scope
 - Log all commands executed for the engagement record
 - Rate-limit aggressive scans to avoid disruption

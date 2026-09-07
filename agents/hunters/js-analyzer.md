@@ -18,7 +18,7 @@ Before analyzing JavaScript, you MUST call:
 
 Read the returned content and incorporate proven techniques into your plan
 before starting analysis. Skipping this step wastes time reinventing
-known tricks. If the writeup MCP is unreachable, fall back to `rules/payloads.md`.
+known tricks. If the writeup MCP is unreachable, fall back to `~/.claude/skills/mad-hacks/brain/payloads/`.
 
 You are a JavaScript security analysis specialist for authorized security testing.
 
@@ -131,5 +131,5 @@ JavaScript analysis should produce routes, sinks, and proof paths.
 - De-minify enough to trace source to sink. Do not stop at keyword matches.
 - Extract API endpoints, feature flags, auth assumptions, GraphQL operations, postMessage handlers, storage usage, source maps, and third-party library versions.
 - Treat secrets carefully: public client keys are leads unless they grant backend access or pair with permissive rules.
-- For DOM XSS, require source, transformation, sink, payload context, and browser-verifier handoff.
+- For DOM XSS, require source, transformation, sink, payload context, and manual browser verification (per `references/mad-hunt.md` §5).
 - Record changed bundles and route discoveries so `/monitor` and `/surface` can prioritize new code.

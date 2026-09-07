@@ -60,7 +60,7 @@ curl -s "https://target.com/users/123" | head -c 500       # web UI
 - Is it read-only IDOR or read-write? The claim should match.
 
 **XSS claimed:**
-- Was it browser-verified? If no → **BLOCK until browser-verifier runs**
+- Was it browser-verified? If no → **BLOCK until manual browser verification is captured** (per `references/mad-hunt.md` §5)
 - Does CSP prevent meaningful exploitation?
 - Is it self-XSS? (requires victim to paste payload into their own session)
 - What can the payload actually DO? cookie theft? CSRF? DOM read? If HttpOnly + SameSite → impact is limited.
@@ -95,7 +95,7 @@ curl -s "https://target.com/users/123" | head -c 500       # web UI
 
 ### 5. Check for Program-Specific Exclusions
 
-Read `policy.md` and `hacktivity.md`:
+Read `.t3mp3st/SCOPE.md` and `hacktivity.md`:
 - Is this exact bug type explicitly excluded?
 - Has this exact endpoint been reported before? (check hacktivity)
 - Does the program consider this severity level for bounty?
@@ -160,8 +160,8 @@ Your job is calibrated truth, not pessimism.
 ## Exhaustion Adversarial Review (subtype: exhaustion)
 
 Activated only when the dispatch prompt sets `subtype: exhaustion`. In
-this mode the autopilot has just had `tools/autopilot_gate.py` return PASS
-and wants to print COMPLETION. Your single job is to disprove that.
+this mode the /mad-hunt PRE-COMPLETION GATE (references/mad-hunt.md §7)
+has just asserted PASS and wants to print COMPLETION. Your single job is to disprove that.
 You are NOT validating a finding here — you are trying to find one
 testable thing the autopilot didn't actually test.
 
@@ -172,7 +172,7 @@ testable thing the autopilot didn't actually test.
 - `ATTACK_SURFACE_RANKING.md` (or `.json`) — the rank assigned to each
   host. P1 hosts are required to have full A-I + class coverage; novel
   prefixes that aren't P1 are also gaps.
-- `.claude/agent-memory-local/brain/targets/*.md` — every brain target
+- `~/.claude/skills/mad-hacks/brain/targets/*.md` — every brain target
   file. You'll grep these for `coverage-<class>`, `not-applicable`,
   `unauth-write:`, `adversarial-battery:`, and the cross-region inference
   patterns the gate already rejects.
@@ -183,9 +183,12 @@ testable thing the autopilot didn't actually test.
   minimum. Plus `cloudflare.txt` when CF is fingerprinted.
 - `evidence/<host>/coverage/<class>.json` — the structured coverage
   records. Validate they aren't shallow even if the gate passed them.
-- `tools/autopilot_gate.py` PASS output (the dispatcher will hand you the
-  log). Re-run the gate yourself to confirm — `uv run python3
-  tools/autopilot_gate.py --target <target> --mode <mode>`.
+- The /mad-hunt PRE-COMPLETION GATE assertion log (dispatcher hands it to you).
+  Re-verify each assertion yourself against `evidence/<host>/coverage/*.jsonl`
+  and the target's brain file — every P1 host ran full A-I, every applicable
+  class hit its ≥25 attempts floor OR carries `not-applicable`/`blocked`,
+  ≥18 distinct subagent dispatches this run, every confirmed finding passed
+  t3-verifier AND a chain attempt.
 - `recon/dns-bruteforce.txt`, `recon/urlscan-cdx.json`,
   `recon/github-code.json`, `recon/public-archives.txt`,
   `recon/mobile/*.endpoints.txt` — the recon depth artifacts.
@@ -203,7 +206,7 @@ testable thing the autopilot didn't actually test.
    `prod-global-slack-client` are exactly the failure mode the rule was
    written for. If any was demoted without a `recon/decision/<host>.md`
    justification → gap.
-3. **Bare coverage hunt.** `grep -r 'coverage-' .claude/agent-memory-local/brain/targets/`.
+3. **Bare coverage hunt.** `grep -r 'coverage-' ~/.claude/skills/mad-hacks/brain/targets/`.
    Any line that doesn't either (a) point at a JSON file under
    `evidence/<host>/coverage/` or (b) carry attempts:N≥25 +
    variants_tried + dimensions_covered + exact_blocker +
@@ -215,7 +218,7 @@ testable thing the autopilot didn't actually test.
    dimensions and an evidence file that exists. Missing or shallow → gap.
 5. **Cross-region inference grep.** `grep -niE
    'same.code.as|equivalent.to|hardened.so|assumed.*same|inferr?ed.*from.*region'
-   .claude/agent-memory-local/brain/targets/`. Any hit → gap. (The
+   ~/.claude/skills/mad-hacks/brain/targets/`. Any hit → gap. (The
    hard gate also flags this; you are double-checking that nobody
    reworded the inference to slip past the regex.)
 6. **Recon-depth presence.** Are all of `recon/dns-bruteforce.txt`,

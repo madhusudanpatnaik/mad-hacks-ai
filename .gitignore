@@ -23,17 +23,70 @@ brain/ruflo-export.jsonl
 
 # Externally-cloned packs (provenance + re-hydrate recipe in packs/UPSTREAM.md,
 # scripts/reinstall-packs.sh). Nested .git dirs — never commit into this repo.
-packs/xalgorix/
-packs/dalfox/
-packs/rifteo-skills/
-packs/secrets-patterns-db/
-packs/exploitarium/
-packs/CloudRip/
-packs/Poc/
+# EXCEPTIONS: EXTRACTION.md + integration markers are the pack's SPOT for
+# integration state (verify-packs.sh contract) — those MUST survive a fresh
+# clone even though the pack contents don't.
+packs/xalgorix/**
+!packs/xalgorix/EXTRACTION.md
+!packs/xalgorix/.vendored
+!packs/xalgorix/.internal
+!packs/xalgorix/.deprecated
+packs/dalfox/**
+!packs/dalfox/EXTRACTION.md
+!packs/dalfox/.vendored
+!packs/dalfox/.internal
+!packs/dalfox/.deprecated
+packs/rifteo-skills/**
+!packs/rifteo-skills/EXTRACTION.md
+!packs/rifteo-skills/.vendored
+!packs/rifteo-skills/.internal
+!packs/rifteo-skills/.deprecated
+packs/secrets-patterns-db/**
+!packs/secrets-patterns-db/EXTRACTION.md
+!packs/secrets-patterns-db/.vendored
+!packs/secrets-patterns-db/.internal
+!packs/secrets-patterns-db/.deprecated
+packs/exploitarium/**
+!packs/exploitarium/EXTRACTION.md
+!packs/exploitarium/.vendored
+!packs/exploitarium/.internal
+!packs/exploitarium/.deprecated
+packs/CloudRip/**
+!packs/CloudRip/EXTRACTION.md
+!packs/CloudRip/.vendored
+!packs/CloudRip/.internal
+!packs/CloudRip/.deprecated
+packs/Poc/**
+!packs/Poc/EXTRACTION.md
+!packs/Poc/.vendored
+!packs/Poc/.internal
+!packs/Poc/.deprecated
+packs/Awesome-Bugbounty-Writeups/**
+!packs/Awesome-Bugbounty-Writeups/EXTRACTION.md
+!packs/Awesome-Bugbounty-Writeups/.vendored
+!packs/Awesome-Bugbounty-Writeups/.internal
+!packs/Awesome-Bugbounty-Writeups/.deprecated
+packs/vulnerability-research/**
+!packs/vulnerability-research/EXTRACTION.md
+!packs/vulnerability-research/.vendored
+!packs/vulnerability-research/.internal
+!packs/vulnerability-research/.deprecated
+packs/AILA/**
+!packs/AILA/EXTRACTION.md
+!packs/AILA/.vendored
+!packs/AILA/.internal
+!packs/AILA/.deprecated
 
-# Asset registry — regenerable from source via scripts/build-registry.py.
-# Canonical remains the file tree; this is the machine-readable index.
-brain/registry/
+# Asset registry — assets.jsonl + assets.db are REGENERABLE from source via
+# scripts/build-registry.py, so they're ignored. pack-index.jsonl is the SPOT
+# for per-pack integration state (manually maintained by verify-packs.sh
+# and the mining workflow) — that one MUST be tracked.
+brain/registry/*
+!brain/registry/pack-index.jsonl
+
+# Retrieval telemetry — session-local aggregation data for pack-eval.sh.
+# Not source of truth; per-machine noise.
+brain/telemetry/
 
 # Engagement state — per-target working memory, never commit
 .engagement/
@@ -41,9 +94,6 @@ brain/registry/
 # Python compilation artifacts
 __pycache__/
 *.pyc
-packs/Awesome-Bugbounty-Writeups/
-packs/vulnerability-research/
-packs/AILA/
 
 # Per-engagement audit state (never commit)
 .audit/

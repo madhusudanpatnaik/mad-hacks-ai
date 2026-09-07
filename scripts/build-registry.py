@@ -362,6 +362,167 @@ def extract_agent(path):
         "last_verified": ts_now(),
     }
 
+# ─── JSONL extractors (normalized atomic records from brain/*.jsonl) ─────
+# Added 2026-09-08 after the pack-integration schema landed. The prose
+# extract_lesson() above walks brain/lessons.md; these walk the atomic JSONL
+# SPOTs so FTS covers them too. Any record whose first line is a "_meta"
+# header (schema doc) is skipped.
+
+def _confidence_bucket(conf):
+    """Map atomic confidence (0.0-1.0) to registry's high/medium/low."""
+    try:
+        c = float(conf)
+    except (TypeError, ValueError):
+        return "medium"
+    if c >= 0.9: return "high"
+    if c >= 0.7: return "medium"
+    return "low"
+
+def extract_atomic_lesson(record):
+    """brain/lessons.jsonl record → registry row (type=lesson)."""
+    rid = record.get("id");
+    if not rid: return None
+    classes = [record["class"]] if record.get("class") else []
+    return {
+        "id":            f"lesson:{rid}",
+        "type":          "lesson",
+        "path":          "brain/lessons.jsonl",
+        "title":         record.get("title", "")[:200],
+        "description":   record.get("capability_effect", "")[:500],
+        "capabilities":  ["atomic-lesson"],
+        "classes":       classes,
+        "technologies":  [],
+        "prerequisites": [],
+        "commands":      [f"jq 'select(.id==\"{rid}\")' brain/lessons.jsonl"],
+        "outputs":       [],
+        "provenance":    {
+            "source": "brain/lessons.jsonl",
+            "record_id": rid,
+            "source_pack": record.get("source_pack", "?"),
+            "attribution": record.get("attribution", "?"),
+            "evidence": record.get("evidence", ""),
+            "activation": record.get("activation", []),
+            "extracted_at": ts_now(),
+        },
+        "epistemic_status": "verified",
+        "confidence":    _confidence_bucket(record.get("confidence", 0.85)),
+        "last_verified": record.get("added_at", ts_now()),
+    }
+
+def extract_pattern(record):
+    """brain/patterns.jsonl record → registry row (type=pattern)."""
+    rid = record.get("id");
+    if not rid: return None
+    classes = [record["class"]] if record.get("class") else []
+    precond = record.get("precondition", "")
+    action = record.get("action", "")
+    return {
+        "id":            f"pattern:{rid}",
+        "type":          "pattern",
+        "path":          "brain/patterns.jsonl",
+        "title":         record.get("name", "")[:200],
+        "description":   f"IF: {precond}  THEN: {action}"[:500],
+        "capabilities":  ["conditional-trigger"],
+        "classes":       classes,
+        "technologies":  [],
+        "prerequisites": [],
+        "commands":      [f"jq 'select(.id==\"{rid}\")' brain/patterns.jsonl"],
+        "outputs":       [],
+        "provenance":    {
+            "source": "brain/patterns.jsonl",
+            "record_id": rid,
+            "source_pack": record.get("source_pack", "?"),
+            "attribution": record.get("attribution", "?"),
+            "evidence": record.get("evidence", ""),
+            "extracted_at": ts_now(),
+        },
+        "epistemic_status": "verified",
+        "confidence":    _confidence_bucket(record.get("confidence", 0.85)),
+        "last_verified": record.get("added_at", ts_now()),
+    }
+
+def extract_atomic_tool(record):
+    """brain/tools.jsonl record → registry row (type=tool)."""
+    rid = record.get("id");
+    if not rid: return None
+    classes = record.get("class", []) or []
+    if isinstance(classes, str): classes = [classes]
+    return {
+        "id":            f"tool:{rid}",
+        "type":          "tool",
+        "path":          "brain/tools.jsonl",
+        "title":         record.get("name", "")[:200],
+        "description":   record.get("purpose", "")[:500],
+        "capabilities":  ["adapter", record.get("execution_mode", "safe_command")],
+        "classes":       classes,
+        "technologies":  [],
+        "prerequisites": [record.get("install", "?")],
+        "commands":      [record.get("invoke", "")],
+        "outputs":       [],
+        "provenance":    {
+            "source": "brain/tools.jsonl",
+            "record_id": rid,
+            "source_pack": record.get("source_pack", "?"),
+            "provenance_note": record.get("provenance", ""),
+            "extracted_at": ts_now(),
+        },
+        "epistemic_status": "verified",
+        "confidence":    "high",
+        "last_verified": record.get("verified_at", ts_now()),
+    }
+
+def extract_pack(record):
+    """brain/registry/pack-index.jsonl record → registry row (type=pack)."""
+    pack = record.get("pack");
+    if not pack: return None
+    refs = record.get("brain_refs", {})
+    n_les = len(refs.get("lessons", []))
+    n_pat = len(refs.get("patterns", []))
+    n_tool = len(refs.get("tools", []))
+    n_pay = len(refs.get("payload_files", []))
+    desc = (f"Pack integration: {n_les} lessons, {n_pat} patterns, "
+            f"{n_tool} tools, {n_pay} payload-file contribs. "
+            f"Upstream: {record.get('upstream_url', '?')}")
+    return {
+        "id":            f"pack:{slugify(pack)}",
+        "type":          "pack",
+        "path":          record.get("extraction_manifest", f"packs/{pack}/EXTRACTION.md"),
+        "title":         pack,
+        "description":   desc[:500],
+        "capabilities":  ["pack-integration"],
+        "classes":       [],
+        "technologies":  [],
+        "prerequisites": [],
+        "commands":      [f"cat packs/{pack}/EXTRACTION.md"],
+        "outputs":       [],
+        "provenance":    {
+            "source": "brain/registry/pack-index.jsonl",
+            "upstream_url": record.get("upstream_url", "?"),
+            "upstream_sha": record.get("upstream_sha", "?"),
+            "integration_score": record.get("integration_score", 0),
+            "notes": record.get("notes", ""),
+            "extracted_at": ts_now(),
+        },
+        "epistemic_status": "verified",
+        "confidence":    "high" if record.get("integration_score", 0) >= 0.9 else "medium",
+        "last_verified": record.get("last_verified", ts_now()),
+    }
+
+def _iter_jsonl(path):
+    """Yield parsed records from a JSONL file, skipping the _meta header row."""
+    if not path.exists(): return
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line: continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        # Skip schema-documenting header rows
+        if "_meta" in rec and "id" not in rec and "pack" not in rec:
+            continue
+        yield rec
+
 # ─── walk + collect ─────────────────────────────────────────
 def collect_all():
     rows = []
@@ -424,6 +585,32 @@ def collect_all():
             rows.append(row)
             seen_agent_ids.add(row["id"])
     counts["agent"] = sum(1 for r in rows if r["type"] == "agent")
+
+    # brain/lessons.jsonl — atomic lessons (2026-09-08 schema)
+    for rec in _iter_jsonl(REPO / "brain" / "lessons.jsonl"):
+        row = extract_atomic_lesson(rec)
+        if row: rows.append(row)
+
+    # brain/patterns.jsonl — conditional patterns (NEW type: "pattern")
+    for rec in _iter_jsonl(REPO / "brain" / "patterns.jsonl"):
+        row = extract_pattern(rec)
+        if row: rows.append(row)
+    counts["pattern"] = sum(1 for r in rows if r["type"] == "pattern")
+
+    # brain/tools.jsonl — atomic tool records
+    for rec in _iter_jsonl(REPO / "brain" / "tools.jsonl"):
+        row = extract_atomic_tool(rec)
+        if row: rows.append(row)
+
+    # brain/registry/pack-index.jsonl — per-pack integration state (NEW type: "pack")
+    for rec in _iter_jsonl(REPO / "brain" / "registry" / "pack-index.jsonl"):
+        row = extract_pack(rec)
+        if row: rows.append(row)
+    counts["pack"] = sum(1 for r in rows if r["type"] == "pack")
+
+    # Recount lesson/tool since JSONLs added to them
+    counts["lesson"] = sum(1 for r in rows if r["type"] == "lesson")
+    counts["tool"] = sum(1 for r in rows if r["type"] == "tool")
 
     return rows, counts
 

@@ -77,6 +77,12 @@ packs/camofox-browser/**
 !packs/camofox-browser/.internal
 !packs/camofox-browser/.deprecated
 
+packs/OmniRoute/**
+!packs/OmniRoute/EXTRACTION.md
+!packs/OmniRoute/.vendored
+!packs/OmniRoute/.internal
+!packs/OmniRoute/.deprecated
+
 packs/AILA/**
 !packs/AILA/EXTRACTION.md
 !packs/AILA/.vendored

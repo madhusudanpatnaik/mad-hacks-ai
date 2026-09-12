@@ -34,4 +34,3 @@ The distinction: **externally-cloned packs** are code + tool trees maintained by
 | `packs/payloads-all-the-things/` | https://github.com/swisskyrepo/PayloadsAllTheThings | `3ac27901c711bdf3f5b65a7b1d1820a1f65bd09a` | 2026-09-08 | MIT |
 | `packs/reverse-skill/` | https://github.com/zhaoxuya520/reverse-skill | `7e2097fd90d25c2f976f6eba26d6c00aa88051df` | 2026-09-08 | MIT |
 | `packs/camofox-browser/` | https://github.com/jo-inc/camofox-browser | `e5a36f5cd0332fde6597de474329a308a53a0716` | 2026-09-08 | MIT |
-| `packs/OmniRoute/` | https://github.com/diegosouzapw/OmniRoute | `ba597b631d22d85e56db6982f24b7d1ebe238df9` | 2026-09-09 | MIT |

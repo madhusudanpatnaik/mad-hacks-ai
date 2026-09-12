@@ -39,6 +39,39 @@ INDEX="brain/registry/pack-index.jsonl"
 [ -f "$ROUTER" ]   || { echo "⛔ $ROUTER missing" >&2; exit 3; }
 [ -f "$INDEX" ]    || { mkdir -p "$(dirname "$INDEX")"; : > "$INDEX"; }
 
+# ── JSONL schema validation (catch silent corruption before the chain check) ──
+# Every non-blank line in each JSONL SPOT must be valid JSON. A malformed row
+# breaks pack-eval.sh + build-registry.py + brain.sh recall silently — validate
+# up-front and fail hard. Applies whether jq is present (parse each row) or
+# absent (fall through with a warning; strict mode still catches missing rows).
+validate_jsonl() {
+  local path="$1"
+  [ -f "$path" ] || return 0
+  command -v jq >/dev/null 2>&1 || { echo "  ⚠ jq missing — skipping JSONL validation of $path" >&2; return 0; }
+  local lineno=0 bad=0
+  while IFS= read -r line; do
+    lineno=$((lineno + 1))
+    [ -z "$line" ] && continue
+    if ! printf '%s\n' "$line" | jq -e . >/dev/null 2>&1; then
+      echo "  ⛔ $path:$lineno malformed JSON — $(printf '%s' "$line" | head -c 80)..." >&2
+      bad=$((bad + 1))
+    fi
+  done < "$path"
+  return $bad
+}
+
+JSONL_OK=1
+for jl in "$INDEX" "brain/lessons.jsonl" "brain/patterns.jsonl" "brain/tools.jsonl" "brain/eval/reference-queries.jsonl"; do
+  if ! validate_jsonl "$jl"; then
+    JSONL_OK=0
+  fi
+done
+if [ $JSONL_OK -eq 0 ]; then
+  echo "" >&2
+  echo "⛔ JSONL validation FAILED — fix malformed rows above before verify-packs will proceed." >&2
+  [ "$MODE" = "strict" ] && exit 2
+fi
+
 check_pack() {
   local pack="$1" dir="packs/$1"
   local deprecated="" vendored="" internal=""

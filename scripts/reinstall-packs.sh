@@ -28,7 +28,6 @@ PACKS=(
   "vulnerability-research|https://github.com/skraft9/vulnerability-research|81664c5ec1b0bf66a75596ad1ea2dfbbcfbbbf38"
   "AILA|https://github.com/project-lambda-zero/AILA|ae50589ff301b23ab501594737d47cf775ca694a"
   "camofox-browser|https://github.com/jo-inc/camofox-browser|e5a36f5cd0332fde6597de474329a308a53a0716"
-  "OmniRoute|https://github.com/diegosouzapw/OmniRoute|ba597b631d22d85e56db6982f24b7d1ebe238df9"
 )
 
 command -v git >/dev/null || { echo "reinstall-packs: git required"; exit 3; }

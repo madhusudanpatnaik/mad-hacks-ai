@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Pre-commit gate: verify pack integration chain (UPSTREAM → router → EXTRACTION → INDEX)
+# for every pack under packs/. Enforced by scripts/verify-packs.sh --strict.
+# Fails the commit if any pack breaks the chain — prevents fragmentation
+# regression per user directive: "eliminate fragmented provenance — every
+# pack must have UPSTREAM → router → extracted knowledge → indexed brain,
+# with CI failing if any link is missing."
+#
+# Bypass in emergencies with: git commit --no-verify (not recommended)
+set -e
+REPO="$(git rev-parse --show-toplevel)"
+if [ -f "$REPO/scripts/verify-packs.sh" ]; then
+  bash "$REPO/scripts/verify-packs.sh" --strict || {
+    echo ""
+    echo "⛔ commit BLOCKED: pack integration chain broken"
+    echo "   Fix the FAIL rows above, then retry the commit."
+    echo "   See scripts/verify-packs.sh --help for markers (.vendored/.internal/.deprecated)"
+    exit 1
+  }
+fi

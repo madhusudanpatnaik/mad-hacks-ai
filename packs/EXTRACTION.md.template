@@ -1,0 +1,85 @@
+<!--
+  EXTRACTION.md — the manifest of what got mined from THIS pack into the brain.
+  Every pack under packs/ needs one (verified by scripts/verify-packs.sh).
+  The purpose: retrieval attribution. When brain.sh recall surfaces a lesson,
+  we know which pack it came from and can measure that pack's contribution.
+
+  Copy this file to packs/<your-pack>/EXTRACTION.md and fill it in.
+  If a section has nothing to extract, keep the heading and write "None."
+  Do NOT delete unused sections — an explicit "None" is a claim, an absent
+  section reads as "not yet examined".
+-->
+
+# EXTRACTION — `<pack-name>`
+
+- **Upstream:** `<url>` @ `<pinned-sha>`
+- **First mined:** `<YYYY-MM-DD>`
+- **Last re-mined:** `<YYYY-MM-DD>` (against upstream SHA `<sha>`)
+- **Extractor:** `<who / which pass>`
+
+## Rationale — why this pack is in the harness
+
+One paragraph. What unique contribution does this pack make that other
+packs don't? If you can't answer this in a paragraph, the pack should be
+`.deprecated`.
+
+## Extracted lessons
+
+Each row: one atomic, retrievable lesson. Attribution goes on the brain
+line itself so `brain.sh recall <target>` surfaces the source.
+
+| Brain record | Class | Title (≤80 chars) | Source file |
+|---|---|---|---|
+| `brain/lessons.md:L<line>` | `<class>` | `<title>` | `packs/<pack>/<file>:<line>` |
+
+*If none: write `None.` — the pack had no novel lessons worth folding.*
+
+## Extracted payloads
+
+Each row: a payload set folded into `brain/payloads/<class>.txt`, with the
+line range so re-mining can dedupe.
+
+| Brain file | Line range | Count | Source file |
+|---|---|---|---|
+| `brain/payloads/<class>.txt` | `L<start>-L<end>` | `<N>` | `packs/<pack>/<file>` |
+
+*If none: write `None.`*
+
+## Extracted tools
+
+Each row: a tool registered in `brain/tools.md`.
+
+| Brain record | Tool name | Purpose (≤60 chars) | Source file |
+|---|---|---|---|
+| `brain/tools.md:L<line>` | `<name>` | `<purpose>` | `packs/<pack>/<file>:<line>` |
+
+*If none: write `None.`*
+
+## Extracted patterns (conditional triggers)
+
+Patterns fire on `brain.sh recall-class <class>` — they say "if you see X,
+try Y". Not narrative lessons — atomic {precondition, action} pairs.
+
+| ID | Class | Precondition | Action | Source |
+|---|---|---|---|---|
+| `PAT-<pack>-<n>` | `<class>` | `<what triggers this>` | `<what to try>` | `packs/<pack>/<file>` |
+
+*If none: write `None.`*
+
+## Router integration
+
+- `references/router.md:L<line>` — how this pack is routed
+
+If the pack has no router entry (marked `.internal`), explain here why —
+e.g. "runtime-only, dispatched by scripts/foo.sh, not by /mad-hunt".
+
+## Verification (last run)
+
+- Last `scripts/verify-packs.sh` result: `<PASS|FAIL>` at `<date>`
+- Last drift check vs upstream: `<pinned SHA>` == `<remote HEAD>`? `<yes|no>`
+- If drift: `<what changed, whether re-mining pending>`
+
+## Notes / next re-mining
+
+Anything a future re-mining pass should know — filters that missed content,
+categories to look at more carefully, upstream branches to watch.

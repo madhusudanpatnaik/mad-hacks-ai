@@ -1,0 +1,25 @@
+{"_meta":"Reference query set for pack-eval.sh A/B impact scoring. Each row is one canonical query the harness would run during real hunts. Add classes as new hunter families come online. Keep the set STABLE — changing it invalidates historical eval scores. Fields per row: {type: recall-class|search, query: <class-or-search-string>, weight: optional 1.0 default}. When integrating a new pack, verify it moves the needle on at least ONE of these queries."}
+{"type":"recall-class","query":"reporting"}
+{"type":"recall-class","query":"workflow"}
+{"type":"recall-class","query":"ssrf"}
+{"type":"recall-class","query":"idor"}
+{"type":"recall-class","query":"xss"}
+{"type":"recall-class","query":"llm-ai"}
+{"type":"recall-class","query":"cloudflare-bypass"}
+{"type":"recall-class","query":"vuln-research"}
+{"type":"recall-class","query":"secrets"}
+{"type":"recall-class","query":"ai-platform"}
+{"type":"recall-class","query":"sast"}
+{"type":"recall-class","query":"auth-sso"}
+{"type":"recall-class","query":"doctrine"}
+{"type":"recall-class","query":"email-auth"}
+{"type":"recall-class","query":"websocket"}
+{"type":"recall-class","query":"cms"}
+{"type":"recall-class","query":"content-spoofing"}
+{"type":"recall-class","query":"binary"}
+{"type":"search","query":"verifier"}
+{"type":"search","query":"cvss"}
+{"type":"search","query":"jwt"}
+{"type":"search","query":"waf bypass"}
+{"type":"search","query":"cloudflare origin"}
+{"type":"search","query":"prompt injection"}

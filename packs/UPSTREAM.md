@@ -29,3 +29,8 @@ bash scripts/reinstall-packs.sh
 `packs/writeups/` · `packs/cyberstrike/` · `packs/strix/` · `packs/claude-bughunter/` · `packs/ai-pentesting/` · `packs/payloads-all-the-things/` · `packs/lostfuzzer/` · `packs/t3mp3st/` · `packs/writeups/pentesterland-archive.json.gz` — these are content packs (methodology docs, disclosed reports, payload archives). They live inside this repo's git history.
 
 The distinction: **externally-cloned packs** are code + tool trees maintained by third parties (large, evolving, own release cadence). **Tracked packs** are curated content extracts.
+| `packs/ai-pentesting/` | https://github.com/Mr-Infect/AI-penetration-testing | `5b623516eccfec694978fd559dd01269192412f7` | 2026-09-08 | (see upstream LICENSE) |
+| `packs/strix/` | https://github.com/usestrix/strix | `52b19233477a783004467c1522651eec96015e73` | 2026-09-08 | Apache-2.0 |
+| `packs/payloads-all-the-things/` | https://github.com/swisskyrepo/PayloadsAllTheThings | `3ac27901c711bdf3f5b65a7b1d1820a1f65bd09a` | 2026-09-08 | MIT |
+| `packs/reverse-skill/` | https://github.com/zhaoxuya520/reverse-skill | `7e2097fd90d25c2f976f6eba26d6c00aa88051df` | 2026-09-08 | MIT |
+| `packs/camofox-browser/` | https://github.com/jo-inc/camofox-browser | `e5a36f5cd0332fde6597de474329a308a53a0716` | 2026-09-08 | MIT |

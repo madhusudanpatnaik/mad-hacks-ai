@@ -2,7 +2,7 @@
 
 A **single-folder, keyless offensive-security toolkit for Claude Code.** This session is the backbone — no API keys, no server, no second bill. It runs a full kill-chain (recon → weaponize → exploit → verify → report) over real system tools, under a strict authorization + evidence + anti-fabrication doctrine, backed by a **persistent brain that compounds** across engagements and every repo you feed it.
 
-Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded in: **xalgorix** (Apache-2.0 · autonomous-pentest methodology), **hahwul/dalfox** v3 (MIT · Rust XSS scanner with native OOB + MCP), **Rifteo/skills** (MIT · 38-skill peer library — 2 doctrine promotions, 10 on-demand attack lanes), **mazen160/secrets-patterns-db** (1610 curated secret regexes, wired via `scripts/secrets-scan.sh`), **bikini/exploitarium** (39 POC folders across 12 CVEs), **moscovium-mc/CloudRip** (CF origin discovery), **shadowsock5/Poc** (72 vendor CVE POC dirs), **devanshbatham/Awesome-Bugbounty-Writeups** (600 curated writeups across 16 classes, 130 net-new URLs folded into writeup corpus), and the **CoffinXP / Lostsec** writeup corpus. Attribution/licenses in `packs/`.
+Distilled from **T3MP3ST** (AGPL-3.0) + **shuvonsec/claude-bug-bounty**. Folded in: **xalgorix** (Apache-2.0 · autonomous-pentest methodology), **hahwul/dalfox** v3 (MIT · Rust XSS scanner with native OOB + MCP), **Rifteo/skills** (MIT · 38-skill peer library), **mazen160/secrets-patterns-db** (1610 curated regexes via `scripts/secrets-scan.sh`), **bikini/exploitarium** (39 PoC folders / 12 CVEs), **moscovium-mc/CloudRip** (CF origin discovery), **shadowsock5/Poc** (Chinese CMS aggregator), **devanshbatham/Awesome-Bugbounty-Writeups** (per-class disclosed-writeup index), **skraft9/vulnerability-research** (active CVE research — 6 attack primitives + 3 tools), **Mr-Infect/AI-penetration-testing** (OWASP LLM Top 10 corpus), **usestrix/strix** (Apache-2.0 · pentest agent framework), **project-lambda-zero/AILA** (modular AI-security-platform archetype), **swisskyrepo/PayloadsAllTheThings** (last-resort payload archive), **zhaoxuya520/reverse-skill** (43 categorized technique docs), and the **CoffinXP / Lostsec** writeup corpus. Attribution/licenses in `packs/`. **19 packs at 100% integration** (measured via `scripts/verify-packs.sh --strict`); per-pack A/B contribution via `scripts/pack-eval.sh`.
 
 ---
 
@@ -31,18 +31,24 @@ The canonical **file-brain** is the source of truth. Sitting on top of it:
     ┌──────────────────────────────────────┐
     │        SOURCE (canonical)            │
     │  references · scripts · tools ·      │
-    │  brain/{lessons,tools,payloads} ·    │
+    │  brain/{lessons,tools,payloads} ·    │  prose (append-only)
+    │  brain/{lessons,patterns,tools}.jsonl│  atomic records (queryable, retrieval-attributed)
+    │  brain/registry/pack-index.jsonl     │  per-pack integration state (SPOT)
+    │  packs/<name>/EXTRACTION.md          │  per-pack extraction manifest
     │  packs · agents · engagements        │
     └──────────────┬───────────────────────┘
                    │
                    ▼
     ┌──────────────────────────────────────┐
     │        REGISTRY (regenerable)        │  scripts/build-registry.py
-    │  brain/registry/assets.jsonl (265)   │  common schema per asset:
-    │  brain/registry/assets.db (SQLite    │    id · type · title · description ·
-    │                    FTS5 / BM25)      │    capabilities · classes · technologies ·
-    │  brain/registry/assets.faiss         │    prerequisites · commands · outputs ·
-    │      (optional, opt-in)              │    provenance · epistemic_status · confidence
+    │  brain/registry/assets.jsonl (406)   │  8 types: reference · script · tool ·
+    │  brain/registry/assets.db (SQLite    │    payload · lesson · agent · pattern · pack
+    │                    FTS5 / BM25)      │  common schema per row:
+    │  brain/registry/assets.faiss         │    id · type · title · description ·
+    │      (optional, opt-in)              │    capabilities · classes · technologies ·
+    │                                      │    prerequisites · commands · outputs ·
+    │                                      │    provenance (incl. source_pack) ·
+    │                                      │    epistemic_status · confidence
     └──────────────┬───────────────────────┘
                    │
                    ▼
@@ -108,26 +114,38 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 │                        engagement-state · build-registry · build-embeddings ·
 │                        intelligence-recall · build-writeup-corpus · refresh-writeup-feeds ·
 │                        brain-sync-ruflo · reinstall-packs · ingest · optimize   (keyless)
-├── brain/               persistent memory:
+├── brain/               persistent memory (dual form: prose for humans, JSONL for machines):
 │   ├── lesson-index.md      class → keyword-set for recall-class
-│   ├── lessons.md           append-only global heuristics (60+)
-│   ├── tools.md             tools learned (30+)
+│   ├── lessons.md           append-only global heuristics — prose (125+)
+│   ├── tools.md             tools learned — prose (47+)
+│   ├── lessons.jsonl        atomic lessons — normalized JSONL (18 records, source_pack-attributed)
+│   ├── patterns.jsonl       conditional {precondition, action} triggers — atomic (23 records)
+│   ├── tools.jsonl          atomic tool records — normalized JSONL (5 records)
+│   ├── eval/                reference-queries.jsonl — canonical A/B eval query set (24 queries)
 │   ├── payloads/            per-class libraries (37 files, 19k+ probes)
 │   ├── targets/             per-target memory (gitignored)
-│   └── registry/            REGENERABLE machine-readable index (gitignored)
-│       ├── assets.jsonl         265 rows, common schema
-│       ├── assets.db            SQLite FTS5 (BM25) lexical index
-│       ├── assets.faiss         optional FAISS semantic index
+│   ├── telemetry/           retrievals.jsonl — retrieval-hit log (gitignored, session-local)
+│   └── registry/            
+│       ├── pack-index.jsonl     TRACKED — per-pack integration state (SPOT for verify-packs)
+│       ├── assets.jsonl         GITIGNORED — 406 rows, regenerable via build-registry.py
+│       ├── assets.db            GITIGNORED — SQLite FTS5 (BM25) lexical index
+│       ├── assets.faiss         GITIGNORED — optional FAISS semantic index
 │       └── assets.embed-map.jsonl
 ├── wordlists/           deduped: params · sensitive-files · content-discovery · raft · api-endpoints ·
 │                        common · onelistforall.txt.gz
 ├── tools/               scanner scripts extracted from ingested repos (48 files, all registry-indexed)
 ├── agents/              t3-{recon,scanner,exploiter,verifier,reporter}  (symlinked into ~/.claude/agents/)
-├── packs/               attribution + methodology from ingested repos
-│                        (writeups/ · cyberstrike/ · strix/ · claude-bughunter/ · ai-pentesting/ ·
-│                         payloads-all-the-things/ · lostfuzzer/ · t3mp3st/  — all tracked)
-│                        (xalgorix/ · dalfox/ · rifteo-skills/  — externally cloned, .gitignored;
-│                         provenance + rehydration recipe in packs/UPSTREAM.md)
+├── packs/               attribution + methodology from ingested repos — 19 packs at 100% integration
+│                        VENDORED (tracked in-repo, may have .vendored/.internal markers):
+│                          writeups/ · cyberstrike/ · strix/ · claude-bughunter/ · claude-bug-bounty/ ·
+│                          t3mp3st/ · reverse-skill/ · payloads-all-the-things/ · ai-pentesting/
+│                        EXTERNALLY CLONED (contents gitignored; EXTRACTION.md + markers tracked):
+│                          xalgorix/ · dalfox/ · rifteo-skills/ · secrets-patterns-db/ ·
+│                          exploitarium/ · CloudRip/ · Poc/ · Awesome-Bugbounty-Writeups/ ·
+│                          vulnerability-research/ · AILA/
+│                          rehydrate: `bash scripts/reinstall-packs.sh` (URLs+SHAs in UPSTREAM.md)
+│                        EVERY pack has: EXTRACTION.md manifest + entry in pack-index.jsonl
+│                        (contract enforced by scripts/verify-packs.sh, wired to pre-commit)
 ├── .engagement/         per-target state (gitignored) — TECHNOLOGY / OBSERVED / TESTED /
 │                        EXHAUSTED / HYPOTHESES / EVIDENCE.jsonl / LOG
 ├── .cdc/                per-target CDC harness working state (gitignored)
@@ -172,7 +190,9 @@ mad-Hacks_ai/            ← symlinked to ~/.claude/skills/mad-hacks (the /mad-h
 | Evidence ledger + epistemic ternary | **LIVE** — `EVIDENCE.jsonl` | Verified/Inferred/Assumed labels never silently upgrade |
 | FAISS + sentence-transformers semantic | **OPTIONAL** — `pip3 install faiss-cpu sentence-transformers` + `python3 scripts/build-embeddings.py` | Not measured until enabled |
 | Ruflo semantic cache | **OPTIONAL** — `brain-sync-ruflo.sh --from-registry` + ruflo MCP | Provenance-tagged; toolkit works without it |
-| Registry (`brain/registry/`) | **REGENERABLE — do not hand-edit** — regenerated from source by `build-registry.py`; canonical remains the file tree | 265 rows across 6 asset types |
+| Registry (`brain/registry/`) | **REGENERABLE — do not hand-edit** — `assets.jsonl` + `assets.db` regenerated from source by `build-registry.py`; canonical remains the file tree. NOTE: `pack-index.jsonl` in the same dir is NOT regenerable — it's the SPOT for per-pack integration state, tracked separately | 406 rows across 8 types (reference · script · tool · payload · lesson · agent · pattern · pack) |
+| **Pack integration state** (`brain/registry/pack-index.jsonl`) | **LIVE — tracked SPOT** — one row per pack (name, upstream URL+SHA, extraction manifest, brain_refs, integration_score, notes). Enforced by `scripts/verify-packs.sh --strict` in pre-commit | 19/19 packs PASS |
+| **Per-pack A/B contribution** | **LIVE** — `scripts/pack-eval.sh` runs 24 reference queries WITH vs WITHOUT each pack via `MADHACKS_BRAIN_EXCLUDE`; contribution_score = Δ / total × 100% | xalgorix 21.82% · vuln-research 18.18% · rifteo 10.91% · 5 packs at 0% (marker-only / prose-only) |
 
 Per-category MRR (RRF, 2026-09-04 v2): direct **0.676** · synonym **0.578** · tech-cross **0.750** · ambiguous **0.357** · indirect **0.125**.
 
@@ -262,21 +282,86 @@ Corpus lives at `~/.local/share/pentest-writeups/metadata.db` (SQLite). Tools av
 
 ---
 
+## Pack integration contract (enforced by pre-commit)
+
+Every pack under `packs/` MUST satisfy this 4-link chain, or carry an escape-hatch marker:
+
+```
+UPSTREAM.md row  →  router.md route  →  EXTRACTION.md manifest  →  pack-index.jsonl entry
+   (or .vendored)     (or .internal)      (mandatory)                (mandatory)
+```
+
+Markers a pack can carry:
+- `.vendored` — pack is mad-hacks-native or historically vendored; skips the UPSTREAM check
+- `.internal` — pack is routing-agnostic infrastructure; skips the router check
+- `.deprecated` — pack is queued for removal; skips all checks
+
+Enforcement:
+
+```bash
+bash scripts/verify-packs.sh --report   # human-readable table + summary (exit 0)
+bash scripts/verify-packs.sh --strict   # exit 1 if ANY pack breaks the chain (pre-commit gate)
+bash scripts/verify-packs.sh --json     # one JSON row per pack, machine-readable
+```
+
+The pre-commit hook (`.githooks/pre-commit`, wired via `git config core.hooksPath .githooks`) runs `--strict` on every commit. Bypasses require explicit `--no-verify` and are discouraged.
+
+## A/B per-pack impact eval
+
+Every atomic record in `brain/{lessons,patterns,tools}.jsonl` carries `source_pack`. The A/B mechanism masks a pack and measures the retrieval delta:
+
+```bash
+# One-off: query with a pack excluded
+MADHACKS_BRAIN_EXCLUDE=xalgorix bash scripts/brain.sh recall-class workflow
+
+# Automated per-pack scorecard against the 24-query reference set
+bash scripts/pack-eval.sh --report
+```
+
+Contribution score = `(records_surfaced_with - records_surfaced_without) / records_with * 100%`. High score = pack is uniquely load-bearing. Zero = pack is redundant (other packs cover the same classes). Reference queries live at `brain/eval/reference-queries.jsonl` — stable set; changing it invalidates historical scores.
+
+Retrieval attribution is logged to `brain/telemetry/retrievals.jsonl` (session-local, gitignored) — every `recall-class`/`search` that surfaces a JSONL record appends `{ts, subcmd, query, record_type, record_id, source_pack}`. Aggregate over multiple hunts to close the loop from retrieval-hit → confirmed-finding per pack.
+
+---
+
 ## Feed it more (it compounds)
 
 ```bash
 bash scripts/ingest.sh <repo-or-file>          # classify + propose merges (read-only)
 bash scripts/brain.sh recall <target>          # target-specific memory
-bash scripts/brain.sh recall-class <class>     # class-relevant lessons
-bash scripts/brain.sh search "<query>"         # NEW — hybrid registry search (uses FTS5)
-bash scripts/brain.sh registry [--rebuild]     # NEW — registry ops
+bash scripts/brain.sh recall-class <class>     # class-relevant lessons + patterns (JSONL-aware)
+bash scripts/brain.sh search "<query>"         # hybrid FTS5 + JSONL grep across the registry
+bash scripts/brain.sh registry [--rebuild]     # regenerate assets.jsonl + FTS index
 bash scripts/brain.sh payload <class> <file>   # wordlists/payloads → brain (deduped)
-bash scripts/brain.sh tool "<name> — <use>"    # tools learned
-bash scripts/brain.sh learn "<heuristic>"      # reusable lessons — every hunter auto-pulls
+bash scripts/brain.sh tool "<name> — <use>"    # tools learned — prose (append-only)
+bash scripts/brain.sh learn "<heuristic>"      # reusable lessons — prose (append-only)
 bash scripts/optimize.sh [--aggressive]        # keep storage lean
 ```
 
-Methodology docs & reports go in `packs/`. Externally-cloned packs (xalgorix/dalfox/rifteo-skills/secrets-patterns-db/exploitarium/CloudRip/Poc/Awesome-Bugbounty-Writeups) are gitignored — rehydrate on a fresh clone via `bash scripts/reinstall-packs.sh` (upstream URLs + pinned commits in `packs/UPSTREAM.md`).
+**When ingesting a new pack** (the full contract):
+
+```bash
+# 1. Clone the pack under packs/<name>/ (add row to UPSTREAM.md with URL + pinned SHA)
+# 2. Classify what it contributes (read-only proposal)
+bash scripts/ingest.sh packs/<name>/
+
+# 3. Extract atomic records into the JSONL SPOTs — DO NOT write prose summaries
+#    Append to brain/lessons.jsonl, brain/patterns.jsonl, brain/tools.jsonl
+#    Each record carries source_pack:"<name>" for retrieval attribution
+
+# 4. Write the extraction manifest (contract)
+cp packs/EXTRACTION.md.template packs/<name>/EXTRACTION.md   # then fill in the sections
+
+# 5. Add the pack-index row (append one line to brain/registry/pack-index.jsonl)
+
+# 6. Verify the chain passes
+bash scripts/verify-packs.sh --strict
+
+# 7. Measure impact (must move the needle on ≥1 reference query)
+bash scripts/pack-eval.sh --report | grep <name>
+```
+
+Methodology docs & reports go in `packs/`. Externally-cloned packs are `.gitignore`d except their `EXTRACTION.md` + integration markers — rehydrate on a fresh clone via `bash scripts/reinstall-packs.sh` (upstream URLs + pinned commits in `packs/UPSTREAM.md`).
 
 ---
 
